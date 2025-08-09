@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 레이아웃 및 컴포넌트 스타일 */
+@layer base {
+  html, body, #root {
+    height: 100%;
+  }
+
+  body {
+    /* butter → amber-50, cocoa → stone-800 */
+    @apply bg-amber-50 text-stone-800 font-sans;
+  }
+}
+
+@layer components {
+  /* 레이아웃 */
+  .ui-app {
+    @apply min-h-[100dvh] grid grid-rows-[auto,1fr,auto];
+  }
+
+  .ui-header {
+    /* butter/70 → amber-50/70 */
+    @apply sticky top-0 z-10 backdrop-blur bg-amber-50/70 border-b border-gray-300;
+  }
+
+  .ui-header-inner {
+    @apply container flex items-center justify-between py-3;
+  }
+
+  .ui-title {
+    @apply m-0 text-lg font-bold;
+  }
+
+  .ui-main {
+    @apply container w-full mt-4 mb-24;
+  }
+
+  /* 카드 */
+  .card {
+    /* card → white, line → gray-300 */
+    @apply bg-white border border-gray-300 rounded-2xl shadow p-4;
+  }
+
+  /* 프로필 바 */
+  .pb-wrapper {
+    @apply border-y border-gray-300 bg-amber-50;
+  }
+
+  .pb-track {
+    @apply flex gap-3 overflow-x-auto px-3 py-2.5 scrollbar-width-none;
+  }
+
+  .pb-chip {
+    @apply inline-flex items-center gap-2 px-3 py-2 rounded-full border border-gray-300 text-sm;
+  }
+
+  .pb-chip.is-active {
+    @apply border-amber-400 bg-amber-100;
+  }
+
+  /* 하단 탭바 */
+  .ui-tabbar {
+    @apply fixed left-0 right-0 bottom-0 bg-amber-50 border-t border-gray-300;
+  }
+
+  .ui-tab {
+    @apply no-underline text-stone-500 py-2 text-center;
+  }
+
+  .ui-tab-inner {
+    @apply inline-flex flex-col items-center gap-1 text-[11px];
+  }
+
+  .ui-tab-inner.active {
+    @apply text-stone-800 font-bold;
+  }
+}

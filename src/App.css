@@ -1,0 +1,41 @@
+:root {
+  --bg: #f6f7fb;
+  --card: #ffffff;
+  --line: #e9ebf3;
+  --text: #111827;
+  --muted: #6b7280;
+  --brand: #7c9cf3;   /* 파스텔 블루 */
+  --brand-weak: #e9efff;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--text); font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Apple SD Gothic Neo", sans-serif; }
+
+.ui-app { min-height: 100dvh; display: grid; grid-template-rows: auto 1fr auto; }
+
+/* Header */
+.ui-header { position: sticky; top: 0; z-index: 10; backdrop-filter: saturate(180%) blur(6px); background: rgba(255,255,255,.85); border-bottom: 1px solid var(--line); }
+.ui-header-inner { max-width: 1040px; margin: 0 auto; padding: 10px 16px; display:flex; align-items:center; justify-content:space-between; }
+.ui-title { margin: 0; font-size: 18px; font-weight: 700; }
+
+/* ProfileBar */
+.pb-wrapper { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: #fff; }
+.pb-track { display: flex; gap: 10px; overflow-x: auto; padding: 10px 12px; scroll-snap-type: x proximity; }
+.pb-track::-webkit-scrollbar { display: none; }
+.pb-chip { scroll-snap-align: center; display: inline-flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--line); background: var(--card); border-radius: 999px; cursor: pointer; transition: .2s ease; }
+.pb-chip:hover { background: #fafbff; }
+.pb-chip.is-active { border-color: var(--brand); background: var(--brand-weak); }
+.pb-avatar { width: 28px; height: 28px; border-radius: 999px; object-fit: cover; }
+.pb-name { font-size: 13px; }
+
+/* Main */
+.ui-main { max-width: 1040px; width: 100%; margin: 16px auto 88px; padding: 0 16px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 1px 0 rgba(10,10,10,.02); padding: 14px; }
+
+/* Tabbar */
+.ui-tabbar { position: fixed; left: 0; right: 0; bottom: 0; background: #fff; border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(5,1fr); }
+.ui-tab { text-decoration: none; color: var(--muted); padding: 8px 0; }
+.ui-tab-inner { display:inline-flex; flex-direction: column; align-items:center; gap:4px; font-size: 11px; padding:6px 0; }
+.ui-tab-inner.active { color: var(--brand); font-weight: 700; }
