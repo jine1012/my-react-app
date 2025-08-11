@@ -3,7 +3,7 @@ import { useState } from 'react';
 export type Baby = { id: string; name: string; avatar?: string; note?: string };
 
 const initial: Baby[] = [
-  { id: 'b1', name: '하람', avatar: 'https://placekitten.com/80/80' },
+  { id: 'b1', name: '민기', avatar: 'https://placekitten.com/80/80' },
   { id: 'b2', name: '다온', avatar: 'https://placekitten.com/81/81' },
   { id: 'b3', name: '서준', avatar: 'https://placekitten.com/82/82' },
 ];

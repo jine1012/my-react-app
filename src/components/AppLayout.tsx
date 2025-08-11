@@ -1,6 +1,6 @@
 import '../App.css';
 import { NavLink, Outlet } from 'react-router-dom';
-import { Home, Camera, List, NotebookText, Settings } from 'lucide-react';
+import { Home, Camera, List, NotebookText, MessageCircle, Settings } from 'lucide-react'; // ← 추가
 import ScrollToTop from './ScrollToTop';
 import ProfileBar from './ProfileBar';
 
@@ -49,6 +49,16 @@ export default function AppLayout({ children }: AppLayoutProps) {
             </span>
           )}
         </NavLink>
+
+        {/* 👇 여기 추가 */}
+        <NavLink to="/chat" className="ui-tab">
+          {({ isActive }) => (
+            <span className={`ui-tab-inner ${isActive ? 'active' : ''}`}>
+              <MessageCircle size={18} /> <span>Chat</span>
+            </span>
+          )}
+        </NavLink>
+
         <NavLink to="/settings" className="ui-tab">
           {({ isActive }) => (
             <span className={`ui-tab-inner ${isActive ? 'active' : ''}`}>
