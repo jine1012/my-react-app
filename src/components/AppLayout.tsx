@@ -13,7 +13,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
       <header className="ui-header">
         <div className="ui-header-inner">
-          <h1 className="ui-title">Baby Monitor</h1>
+          <h1 className="ui-title">Smart Baby Moniter</h1>
         </div>
         <ProfileBar onChange={(id) => console.log('selected:', id)} />
       </header>
