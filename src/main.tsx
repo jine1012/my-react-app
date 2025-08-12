@@ -7,7 +7,6 @@ import Live from './pages/Live';
 import Logs from './pages/Logs';
 import Diary from './pages/Diary';
 import Settings from './pages/Settings';
-import Chat from "./pages/Chat";
 import './index.css';
 
 const router = createBrowserRouter([
@@ -19,7 +18,6 @@ const router = createBrowserRouter([
       { path: 'live', element: <Live /> },
       { path: 'logs', element: <Logs /> },
       { path: 'diary', element: <Diary /> },
-      { path: "chat", element: <Chat /> },
       { path: 'settings', element: <Settings /> },
       { path: '*', element: <div style={{ padding: 16 }}>Not Found</div> },
     ],
