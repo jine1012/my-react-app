@@ -6,7 +6,8 @@ import Home from './pages/Home';
 import Live from './pages/Live';
 import Logs from './pages/Logs';
 import Diary from './pages/Diary';
-import Settings from './pages/Settings';
+// import Settings from './pages/Settings';
+import CryAnalysis from './pages/CryAnalysis';
 import './index.css';
 
 const router = createBrowserRouter([
@@ -18,7 +19,8 @@ const router = createBrowserRouter([
       { path: 'live', element: <Live /> },
       { path: 'logs', element: <Logs /> },
       { path: 'diary', element: <Diary /> },
-      { path: 'settings', element: <Settings /> },
+      { path: 'analysis', element: <CryAnalysis /> }, // 추가
+      // { path: 'settings', element: <Settings /> },
       { path: '*', element: <div style={{ padding: 16 }}>Not Found</div> },
     ],
   },
