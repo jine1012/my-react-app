@@ -1,10 +1,11 @@
 // server/routes/cry-detection.js
-const express = require('express');
-const axios = require('axios');
+import express from 'express';
+import axios from 'axios';
+
 const router = express.Router();
 
 // 라즈베리파이 Flask 서버 설정
-const PI_API_BASE = process.env.RASPBERRY_PI_URL || 'http://192.168.1.100:5000';
+const PI_API_BASE = process.env.RASPBERRY_PI_URL || 'http://192.168.0.94:5000';
 
 // 현재 울음 감지 상태를 메모리에 저장 (실제 환경에서는 데이터베이스 사용 권장)
 let detectionState = {
@@ -209,4 +210,4 @@ router.get('/test-connection', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

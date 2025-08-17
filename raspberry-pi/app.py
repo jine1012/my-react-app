@@ -10,7 +10,7 @@ import os
 from datetime import datetime
 
 app = Flask(__name__)
-CORS(app)  # React 앱에서의 요청 허용
+CORS(app, origins=CORS_ORIGINS)  # React 앱에서의 요청 허용
 
 # 전역 변수로 프로세스 상태 관리
 cry_detection_process = None
@@ -18,8 +18,11 @@ detection_active = False
 detection_thread = None
 stop_detection = False
 
+# 설정 파일 import
+from config.server_config import NODEJS_SERVER_URL, FLASK_HOST, FLASK_PORT, CORS_ORIGINS, EVENT_SEND_TIMEOUT
+
 # Node.js 서버 설정 (감지 이벤트 전송용)
-NODEJS_SERVER = os.getenv('NODEJS_SERVER_URL', 'http://192.168.1.101:5000')
+NODEJS_SERVER = NODEJS_SERVER_URL
 
 def send_detection_event(confidence=0.85, audio_data=None):
     """
@@ -36,7 +39,7 @@ def send_detection_event(confidence=0.85, audio_data=None):
         response = requests.post(
             f'{NODEJS_SERVER}/api/cry-detection/detection-event',
             json=event_data,
-            timeout=5
+            timeout=EVENT_SEND_TIMEOUT
         )
         
         if response.status_code == 200:
@@ -332,4 +335,4 @@ if __name__ == "__main__":
     print("  - GET  /test-microphone : 마이크 테스트")
     print("  - GET/POST /config : 설정 관리")
     
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host=FLASK_HOST, port=FLASK_PORT, debug=True)

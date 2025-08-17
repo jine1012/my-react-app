@@ -3,14 +3,36 @@ import { OpenAI } from 'openai';
 
 const router = express.Router();
 
+// OpenAI API 키 검증
+const validateOpenAIKey = () => {
+  if (!process.env.VITE_OPENAI_API_KEY) {
+    throw new Error('OpenAI API 키가 설정되지 않았습니다. .env 파일에 OPENAI_API_KEY를 추가해주세요.');
+  }
+  return true;
+};
+
 // OpenAI 설정 (환경변수에서 가져오기)
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+let openai;
+try {
+  validateOpenAIKey();
+  openai = new OpenAI({
+    apiKey: process.env.VITE_OPENAI_API_KEY,
+  });
+} catch (error) {
+  console.warn('OpenAI 초기화 실패:', error.message);
+}
 
 // 아기 울음 분석 API
 router.post('/analyze-cry', async (req, res) => {
   try {
+    // OpenAI API 키 확인
+    if (!openai) {
+      return res.status(503).json({ 
+        error: 'OpenAI 서비스가 사용할 수 없습니다',
+        message: 'API 키를 확인해주세요' 
+      });
+    }
+
     const { audioData, babyAge, symptoms } = req.body;
     
     if (!audioData) {
@@ -56,6 +78,15 @@ router.post('/analyze-cry', async (req, res) => {
 
   } catch (error) {
     console.error('Cry analysis error:', error);
+    
+    // OpenAI API 관련 에러 처리
+    if (error.message.includes('API key') || error.message.includes('authentication')) {
+      return res.status(401).json({ 
+        error: 'OpenAI API 인증 실패',
+        message: 'API 키를 확인해주세요' 
+      });
+    }
+    
     res.status(500).json({ 
       error: 'Failed to analyze cry',
       message: error.message 

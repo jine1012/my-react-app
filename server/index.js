@@ -1,13 +1,21 @@
 // server/index.js
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const path = require('path');
-require('dotenv').config();
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const cryDetectionRoutes = require('./routes/cry-detection');
 
 // 미들웨어 설정
 app.use(helmet({
@@ -33,10 +41,10 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static(path.join(__dirname, '../dist')));
 
 // API 라우트 등록
-const babyRoutes = require('./routes/baby');
-const chatRoutes = require('./routes/chat');
-const diaryRoutes = require('./routes/diary');
-const cryDetectionRoutes = require('./routes/cry-detection'); // 새로 추가
+import babyRoutes from './routes/baby.js';
+import chatRoutes from './routes/chat.js';
+import diaryRoutes from './routes/diary.js';
+import cryDetectionRoutes from './routes/cry-detection.js'; // 새로 추가
 
 app.use('/api/baby', babyRoutes);
 app.use('/api/chat', chatRoutes);
@@ -52,7 +60,7 @@ app.get('/api/health', (req, res) => {
     services: {
       nodejs: 'running',
       openai: process.env.OPENAI_API_KEY ? 'configured' : 'not configured',
-      raspberryPi: process.env.RASPBERRY_PI_URL || 'http://192.168.1.100:5000'
+      raspberryPi: process.env.RASPBERRY_PI_URL || 'http://192.168.0.94:5000'
     }
   });
 });
@@ -106,4 +114,4 @@ process.on('SIGINT', () => {
   process.exit(0);
 });
 
-module.exports = app;
+export default app;
