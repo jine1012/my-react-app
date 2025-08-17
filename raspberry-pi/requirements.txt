@@ -1,0 +1,28 @@
+# raspberry-pi/requirements.txt
+# Flask 웹 서버
+Flask==2.3.3
+Flask-CORS==4.0.0
+
+# 오디오 처리
+pyaudio==0.2.11
+librosa==0.10.1
+soundfile==0.12.1
+
+# 머신러닝
+tensorflow==2.13.0  # 라즈베리파이용 경량 버전
+# 또는 tflite-runtime==2.13.0  # TensorFlow Lite (더 가벼움)
+numpy==1.24.3
+scikit-learn==1.3.0
+
+# HTTP 요청
+requests==2.31.0
+
+# 시스템 모니터링
+psutil==5.9.5
+
+# 유틸리티
+python-dotenv==1.0.0
+
+# 개발 도구 (선택사항)
+matplotlib==3.7.2  # 오디오 시각화용
+scipy==1.11.2      # 신호 처리용
