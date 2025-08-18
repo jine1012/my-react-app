@@ -15,7 +15,6 @@ const __dirname = dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const cryDetectionRoutes = require('./routes/cry-detection');
 
 // 미들웨어 설정
 app.use(helmet({
@@ -40,16 +39,16 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 // 정적 파일 서빙 (React 빌드 파일)
 app.use(express.static(path.join(__dirname, '../dist')));
 
-// API 라우트 등록
+// API 라우트 등록 - ES modules 방식으로 통일
 import babyRoutes from './routes/baby.js';
 import chatRoutes from './routes/chat.js';
 import diaryRoutes from './routes/diary.js';
-import cryDetectionRoutes from './routes/cry-detection.js'; // 새로 추가
+import cryDetectionRoutes from './routes/cry-detection.js';
 
 app.use('/api/baby', babyRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/diary', diaryRoutes);
-app.use('/api/cry-detection', cryDetectionRoutes); // 울음 감지 라우트 등록
+app.use('/api/cry-detection', cryDetectionRoutes);
 
 // Health check 엔드포인트
 app.get('/api/health', (req, res) => {
