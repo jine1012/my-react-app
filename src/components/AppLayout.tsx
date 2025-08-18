@@ -1,6 +1,7 @@
+// src/components/AppLayout.tsx
 import '../App.css';
 import { NavLink, Outlet } from 'react-router-dom';
-import { Home, Camera, List, NotebookText, Brain, Menu, Bell, Heart } from 'lucide-react';
+import { Home, Camera, Moon, List, NotebookText, Brain, Menu, Bell, Heart } from 'lucide-react';
 import ScrollToTop from './ScrollToTop';
 import ProfileBar from './ProfileBar';
 
@@ -42,12 +43,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
         {children ?? <Outlet />}
       </main>
 
-      {/* 하단 탭바 */}
+      {/* 하단 탭바 - 5개 탭으로 업데이트 */}
       <nav className="bottom-tabbar">
         <NavLink to="/" end className="tab-item">
           {({ isActive }) => (
             <div className={`tab-content ${isActive ? 'active' : ''}`}>
-              <Home size={22} />
+              <Home size={20} />
               <span>홈</span>
             </div>
           )}
@@ -56,8 +57,17 @@ export default function AppLayout({ children }: AppLayoutProps) {
         <NavLink to="/live" className="tab-item">
           {({ isActive }) => (
             <div className={`tab-content ${isActive ? 'active' : ''}`}>
-              <Camera size={22} />
+              <Camera size={20} />
               <span>실시간</span>
+            </div>
+          )}
+        </NavLink>
+        
+        <NavLink to="/sleep" className="tab-item">
+          {({ isActive }) => (
+            <div className={`tab-content ${isActive ? 'active' : ''}`}>
+              <Moon size={20} />
+              <span>수면</span>
             </div>
           )}
         </NavLink>
@@ -65,7 +75,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         <NavLink to="/logs" className="tab-item">
           {({ isActive }) => (
             <div className={`tab-content ${isActive ? 'active' : ''}`}>
-              <List size={22} />
+              <List size={20} />
               <span>로그</span>
             </div>
           )}
@@ -74,17 +84,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
         <NavLink to="/diary" className="tab-item">
           {({ isActive }) => (
             <div className={`tab-content ${isActive ? 'active' : ''}`}>
-              <NotebookText size={22} />
+              <NotebookText size={20} />
               <span>일기</span>
-            </div>
-          )}
-        </NavLink>
-        
-        <NavLink to="/analysis" className="tab-item">
-          {({ isActive }) => (
-            <div className={`tab-content ${isActive ? 'active' : ''}`}>
-              <Brain size={22} />
-              <span>분석</span>
             </div>
           )}
         </NavLink>
