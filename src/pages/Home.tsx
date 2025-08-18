@@ -1,73 +1,170 @@
-import { useEffect, useState } from "react";
+// src/pages/Home.tsx
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Thermometer, Droplets, Play, NotebookPen, List, Heart, Sparkles } from "lucide-react";
-import babyHero from "../assets/baby-hero.png";
+import { 
+  Thermometer, 
+  Droplets, 
+  Play, 
+  NotebookPen, 
+  List, 
+  Sparkles,
+  Baby,
+  AlertTriangle,
+  Wifi,
+  WifiOff,
+  Activity
+} from "lucide-react";
 
-type Log = { ts: number; type: "note" | "cry" | "temp"; msg: string };
+interface LogEntry {
+  id: number;
+  ts: string;
+  type: string;
+  msg: string;
+}
+
+interface SensorData {
+  roomTemperature: number;
+  humidity: number;
+  babyTemperature: number;
+  timestamp: string;
+  jetsonConnected: boolean;
+}
 
 export default function Home() {
-  const [logs, setLogs] = useState<Log[]>([]);
-  const last = logs[0];
-
-  // Baby hero image from assets
-  // const babyHero = "https://images.unsplash.com/photo-1544717440-6e4d999de2a1?w=400&h=400&fit=crop&crop=face";
-
-  useEffect(() => {
+  const [logs] = useState<LogEntry[]>(() => {
     const stored = localStorage.getItem("baby-logs");
-    if (stored) {
+    return stored ? JSON.parse(stored) : [];
+  });
+
+  const [sensorData, setSensorData] = useState<SensorData>({
+    roomTemperature: 23.2,
+    humidity: 48,
+    babyTemperature: 36.8,
+    timestamp: new Date().toISOString(),
+    jetsonConnected: false
+  });
+
+  const last = logs.length > 0 ? logs[logs.length - 1] : null;
+
+  // 젯슨나노 연결 상태 및 센서 데이터 실시간 업데이트
+  useEffect(() => {
+    const fetchSensorData = async () => {
       try {
-        setLogs(JSON.parse(stored));
-      } catch {
-        console.error("Failed to parse logs");
+        // 젯슨나노 연결 상태 확인
+        const statusResponse = await fetch('/api/jetson/status');
+        const statusData = await statusResponse.json();
+        
+        // 센서 데이터 가져오기
+        const sensorResponse = await fetch('/api/sensors/data');
+        const newSensorData = await sensorResponse.json();
+        
+        setSensorData({
+          roomTemperature: newSensorData.roomTemperature || 23.2,
+          humidity: newSensorData.humidity || 48,
+          babyTemperature: newSensorData.babyTemperature || 36.8,
+          timestamp: new Date().toISOString(),
+          jetsonConnected: statusData.connected || false
+        });
+      } catch (error) {
+        console.error('센서 데이터 가져오기 실패:', error);
+        // 연결 실패 시 시뮬레이션 데이터
+        setSensorData(prev => ({
+          roomTemperature: parseFloat((20 + Math.random() * 6).toFixed(1)),
+          humidity: Math.floor(40 + Math.random() * 30),
+          babyTemperature: parseFloat((36.0 + Math.random() * 2.5).toFixed(1)),
+          timestamp: new Date().toISOString(),
+          jetsonConnected: false
+        }));
       }
-    }
+    };
+
+    // 초기 데이터 로드
+    fetchSensorData();
+    
+    // 3초마다 업데이트
+    const interval = setInterval(fetchSensorData, 3000);
+    
+    return () => clearInterval(interval);
   }, []);
 
+  // 체온 상태 판단 함수
+  const getTemperatureStatus = (temp: number) => {
+    if (temp < 36.0) return { 
+      status: '저체온', 
+      color: 'text-blue-600', 
+      bgColor: 'bg-blue-100',
+      ringColor: 'ring-blue-200',
+      alertLevel: 'warning'
+    };
+    if (temp <= 37.5) return { 
+      status: '정상', 
+      color: 'text-green-600', 
+      bgColor: 'bg-green-100',
+      ringColor: 'ring-green-200',
+      alertLevel: 'normal'
+    };
+    if (temp <= 38.0) return { 
+      status: '미열', 
+      color: 'text-yellow-600', 
+      bgColor: 'bg-yellow-100',
+      ringColor: 'ring-yellow-200',
+      alertLevel: 'warning'
+    };
+    return { 
+      status: '고열', 
+      color: 'text-red-600', 
+      bgColor: 'bg-red-100',
+      ringColor: 'ring-red-200',
+      alertLevel: 'danger'
+    };
+  };
+
+  const tempStatus = getTemperatureStatus(sensorData.babyTemperature);
+
   return (
-    <div className="min-h-screen bg-amber-50 px-4 py-6">
-      {/* 메인 카드 */}
-      <div className="bg-white rounded-3xl shadow-lg border border-amber-200/50 p-6 mb-6">
-        {/* 헤더 텍스트 */}
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-100 to-orange-100 border border-amber-200 rounded-full px-4 py-2 mb-4">
-            <Sparkles className="w-4 h-4 text-amber-600" />
-            <span className="text-sm font-medium text-amber-800">같이 보는 시간까지 함께하는</span>
+    <div className="mobile-home">
+      {/* 메인 히어로 카드 */}
+      <div className="home-hero-card">
+        {/* 헤더 */}
+        <div className="hero-header">
+          <div className="hero-badge">
+            <Sparkles className="badge-icon" />
+            Baby Love
           </div>
-          <h1 className="text-2xl font-bold text-stone-800 mb-2">
-            우리 아기의{" "}
-            <span className="bg-gradient-to-r from-amber-800 to-orange-800 bg-clip-text text-transparent">
-              모든 것
-            </span>
+          <h1 className="hero-title">
+            사랑스러운<br />
+            <span className="hero-title-highlight">우리 아기</span>
           </h1>
-          <p className="text-amber-600/80 text-sm">오늘 하루의 활동 유형은</p>
+          <p className="hero-subtitle">
+            ✨<br />
+            오늘 하루의 활동을 보여드릴게요.
+          </p>
         </div>
 
-        {/* 아기 이미지 영역 */}
+        {/* 이미지 영역 */}
         <div className="hero-image-container">
           <div className="hero-image-wrapper">
-            {/* 점선 테두리 배경 블러 효과 */}
-            <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-orange-300/30 to-yellow-300/30 rounded-full blur-md animate-pulse"></div>
             <div className="image-ring"></div>
-            <img
-              src={babyHero}
-              alt="아기 아이콘"
-              className="hero-image"
+            <img 
+              className="hero-image" 
+              src="/happy-baby.webp" 
+              alt="Happy Baby"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                const placeholder = target.parentElement?.querySelector('.placeholder') as HTMLElement;
+                if (placeholder) placeholder.style.display = 'flex';
+              }}
             />
+            <div className="placeholder" style={{ display: 'none', width: '160px', height: '160px', background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', borderRadius: '50%', alignItems: 'center', justifyContent: 'center', fontSize: '4rem' }}>
+              👶
+            </div>
             <div className="floating-icon floating-heart">
-              <Heart className="icon-sm" />
+              <span className="icon-sm">❤️</span>
             </div>
             <div className="floating-icon floating-sparkle">
-              <Sparkles className="icon-xs" />
+              <span className="icon-sm">✨</span>
             </div>
-          </div>
-        </div>
-
-        {/* 아기 정보 */}
-        <div className="text-center mb-6">
-          <h3 className="text-xl font-bold text-amber-800 mb-2">활발한 활동 아기</h3>
-          <div className="text-amber-600/80 text-sm leading-relaxed">
-            안녕하세요! ✨<br />
-            오늘 하루의 활동을 보여드릴게요.
           </div>
         </div>
 
@@ -97,6 +194,29 @@ export default function Home() {
         </div>
       </div>
 
+      {/* 젯슨나노 연결 상태 */}
+      <div className="bg-white rounded-2xl shadow-sm border border-amber-200/50 p-4 mb-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className={`w-3 h-3 rounded-full ${sensorData.jetsonConnected ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
+            <h3 className="font-semibold text-stone-800">젯슨나노 상태</h3>
+          </div>
+          <div className="flex items-center gap-2">
+            {sensorData.jetsonConnected ? (
+              <>
+                <Wifi className="w-4 h-4 text-green-500" />
+                <span className="text-sm text-green-600 font-medium">연결됨</span>
+              </>
+            ) : (
+              <>
+                <WifiOff className="w-4 h-4 text-red-500" />
+                <span className="text-sm text-red-600 font-medium">연결 끊김</span>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* 상태 요약 카드 */}
       <div className="bg-white rounded-2xl shadow-sm border border-amber-200/50 p-5 mb-6">
         <div className="flex items-center gap-3 mb-4">
@@ -121,28 +241,107 @@ export default function Home() {
         </div>
       </div>
 
-      {/* 환경 정보 카드들 */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-white rounded-2xl shadow-sm border border-amber-200/50 p-5">
-          <div className="flex items-center justify-between mb-2">
-            <div className="w-12 h-12 bg-gradient-to-br from-red-100 to-orange-100 rounded-2xl flex items-center justify-center">
-              <Thermometer className="w-6 h-6 text-red-500" />
+      {/* 환경 정보 카드들 - 기존 2개 + 아기 체온 추가 */}
+      <div className="grid grid-cols-1 gap-4 mb-6">
+        {/* 첫 번째 줄: 환경 센서 */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-white rounded-2xl shadow-sm border border-amber-200/50 p-5">
+            <div className="flex items-center justify-between mb-2">
+              <div className="w-12 h-12 bg-gradient-to-br from-red-100 to-orange-100 rounded-2xl flex items-center justify-center">
+                <Thermometer className="w-6 h-6 text-red-500" />
+              </div>
+              <span className="text-2xl font-bold text-stone-800">{sensorData.roomTemperature}°C</span>
             </div>
-            <span className="text-2xl font-bold text-stone-800">23.2°C</span>
+            <p className="text-sm font-medium text-stone-600">실내 온도</p>
+            <div className="mt-2">
+              <div className="inline-block px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                적정 온도
+              </div>
+            </div>
           </div>
-          <p className="text-sm font-medium text-stone-600">온도</p>
+
+          <div className="bg-white rounded-2xl shadow-sm border border-amber-200/50 p-5">
+            <div className="flex items-center justify-between mb-2">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl flex items-center justify-center">
+                <Droplets className="w-6 h-6 text-blue-500" />
+              </div>
+              <span className="text-2xl font-bold text-stone-800">{sensorData.humidity}%</span>
+            </div>
+            <p className="text-sm font-medium text-stone-600">실내 습도</p>
+            <div className="mt-2">
+              <div className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
+                sensorData.humidity < 40 ? 'bg-orange-100 text-orange-700' :
+                sensorData.humidity <= 60 ? 'bg-green-100 text-green-700' :
+                'bg-blue-100 text-blue-700'
+              }`}>
+                {sensorData.humidity < 40 ? '건조' : sensorData.humidity <= 60 ? '적정 습도' : '습함'}
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-amber-200/50 p-5">
-          <div className="flex items-center justify-between mb-2">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl flex items-center justify-center">
-              <Droplets className="w-6 h-6 text-blue-500" />
+        {/* 두 번째 줄: 아기 체온 (강조된 큰 카드) */}
+        <div className={`bg-white rounded-2xl shadow-sm border p-6 ring-2 ${tempStatus.ringColor} ${
+          tempStatus.alertLevel === 'danger' ? 'border-red-200 animate-pulse' : 'border-amber-200/50'
+        }`}>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${tempStatus.bgColor}`}>
+                <Baby className={`w-7 h-7 ${tempStatus.color}`} />
+              </div>
+              <div>
+                <h3 className="font-bold text-stone-800 text-lg">아기 체온</h3>
+                <p className="text-sm text-stone-600">적외선 센서</p>
+              </div>
             </div>
-            <span className="text-2xl font-bold text-stone-800">48%</span>
+            <div className="text-right">
+              <div className={`text-3xl font-bold ${tempStatus.color}`}>
+                {sensorData.babyTemperature.toFixed(1)}°C
+              </div>
+              <div className={`inline-block px-3 py-1 rounded-full text-sm font-medium mt-2 ${tempStatus.bgColor} ${tempStatus.color}`}>
+                {tempStatus.status}
+              </div>
+            </div>
           </div>
-          <p className="text-sm font-medium text-stone-600">습도</p>
+
+          {/* 체온 상태에 따른 알림 */}
+          {tempStatus.alertLevel === 'danger' && (
+            <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl">
+              <AlertTriangle className="w-5 h-5 text-red-600" />
+              <div>
+                <p className="text-sm font-medium text-red-800">주의가 필요합니다</p>
+                <p className="text-xs text-red-600">체온이 정상 범위를 벗어났습니다. 의료진과 상담을 권장합니다.</p>
+              </div>
+            </div>
+          )}
+
+          {tempStatus.alertLevel === 'warning' && (
+            <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-xl">
+              <Activity className="w-5 h-5 text-yellow-600" />
+              <div>
+                <p className="text-sm font-medium text-yellow-800">관찰이 필요합니다</p>
+                <p className="text-xs text-yellow-600">체온 변화를 지속적으로 모니터링하세요.</p>
+              </div>
+            </div>
+          )}
+
+          {tempStatus.alertLevel === 'normal' && (
+            <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-xl">
+              <Sparkles className="w-5 h-5 text-green-600" />
+              <p className="text-sm font-medium text-green-800">정상 체온 범위입니다. 건강한 상태를 유지하고 있어요! 👶✨</p>
+            </div>
+          )}
+
+          {/* 업데이트 시간 */}
+          <div className="mt-4 pt-3 border-t border-stone-100">
+            <p className="text-xs text-stone-500 text-center">
+              마지막 업데이트: {new Date(sensorData.timestamp).toLocaleTimeString()}
+            </p>
+          </div>
         </div>
       </div>
+
+
     </div>
   );
 }
