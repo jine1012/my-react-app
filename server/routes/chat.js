@@ -1,76 +1,139 @@
+// server/routes/chat.js (환경변수 강제 로드)
 import express from 'express';
 import { OpenAI } from 'openai';
+import dotenv from 'dotenv';
+import path from 'path';
+import fs from 'fs';
+
+// 🔥 환경변수 강제 로드
+dotenv.config();
 
 const router = express.Router();
 
-// OpenAI API 키 검증
-const validateOpenAIKey = () => {
-  if (!process.env.VITE_OPENAI_API_KEY) {
-  throw new Error('OpenAI API 키가 설정되지 않았습니다. .env 파일에 VITE_OPENAI_API_KEY를 추가해주세요.');
+// 🔍 .env 파일 존재 확인
+const envPath = path.join(process.cwd(), '.env');
+console.log('🔍 .env 파일 체크:');
+console.log('- 경로:', envPath);
+console.log('- 존재함:', fs.existsSync(envPath));
+
+if (fs.existsSync(envPath)) {
+  const envContent = fs.readFileSync(envPath, 'utf8');
+  console.log('- 내용 미리보기:', envContent.substring(0, 100) + '...');
 }
-  return true;
+
+// 🔍 환경변수 상세 확인
+console.log('🔍 환경변수 상세 확인:');
+console.log('- process.env.OPENAI_API_KEY:', process.env.OPENAI_API_KEY ? `설정됨 (${process.env.OPENAI_API_KEY.length}자)` : '❌ 없음');
+console.log('- process.env.VITE_OPENAI_API_KEY:', process.env.VITE_OPENAI_API_KEY ? `설정됨 (${process.env.VITE_OPENAI_API_KEY.length}자)` : '❌ 없음');
+
+// API 키 가져오기
+const getApiKey = () => {
+  // 1. 환경변수에서 시도
+  let key = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY;
+  
+  // 2. .env 파일을 직접 파싱 (fallback)
+  if (!key && fs.existsSync(envPath)) {
+    try {
+      const envContent = fs.readFileSync(envPath, 'utf8');
+      const lines = envContent.split('\n');
+      
+      for (const line of lines) {
+        if (line.startsWith('OPENAI_API_KEY=')) {
+          key = line.split('=')[1].trim();
+          console.log('🔧 .env 파일에서 직접 읽음: OPENAI_API_KEY');
+          break;
+        } else if (line.startsWith('VITE_OPENAI_API_KEY=')) {
+          key = line.split('=')[1].trim();
+          console.log('🔧 .env 파일에서 직접 읽음: VITE_OPENAI_API_KEY');
+          break;
+        }
+      }
+    } catch (error) {
+      console.error('❌ .env 파일 직접 읽기 실패:', error.message);
+    }
+  }
+  
+  // 3. 하드코딩된 키 (최후의 수단)
+  if (!key) {
+    // 🚨 여기에 실제 API 키를 입력하세요 (임시)
+    key = "sk-proj-your-actual-api-key-here";
+    console.log('🚨 하드코딩된 키 사용');
+  }
+  
+  return key;
 };
 
-// OpenAI 설정
+// OpenAI 초기화
 let openai;
-try {
-  validateOpenAIKey();
-  openai = new OpenAI({
-    apiKey: process.env.VITE_OPENAI_API_KEY,
-  });
-} catch (error) {
-  console.warn('OpenAI 초기화 실패:', error.message);
+const apiKey = getApiKey();
+
+console.log('🔑 최종 API 키 상태:');
+console.log('- 키 존재:', !!apiKey);
+console.log('- 키 길이:', apiKey?.length || 0);
+console.log('- 키 시작:', apiKey?.substring(0, 10) || 'none');
+
+if (apiKey && apiKey !== "sk-proj-your-actual-api-key-here") {
+  try {
+    openai = new OpenAI({ apiKey });
+    console.log('✅ OpenAI 초기화 성공!');
+  } catch (error) {
+    console.error('❌ OpenAI 초기화 실패:', error.message);
+  }
+} else {
+  console.error('❌ 유효한 API 키가 없습니다');
 }
 
-// 채팅 메시지 전송 API
+// 채팅 메시지 API
 router.post('/message', async (req, res) => {
+  console.log('📥 채팅 요청 받음:', {
+    hasOpenAI: !!openai,
+    message: req.body?.message?.substring(0, 50) || 'none'
+  });
+
   try {
-    // OpenAI API 키 확인
     if (!openai) {
+      console.error('❌ OpenAI 초기화되지 않음');
       return res.status(503).json({ 
+        success: false,
         error: 'OpenAI 서비스가 사용할 수 없습니다',
-        message: 'API 키를 확인해주세요' 
+        message: 'API 키를 확인해주세요',
+        debug: {
+          apiKeyFound: !!apiKey,
+          apiKeyLength: apiKey?.length || 0,
+          envFileExists: fs.existsSync(envPath)
+        }
       });
     }
 
-    const { message, context, babyInfo } = req.body;
+    const { message } = req.body;
     
     if (!message) {
-      return res.status(400).json({ error: 'Message is required' });
+      return res.status(400).json({ 
+        success: false,
+        error: 'Message is required' 
+      });
     }
 
-    // 아기 정보를 포함한 컨텍스트 구성
-    const systemPrompt = `
-      당신은 아기 양육 전문가입니다. 
-      부모님들의 질문에 대해 친근하고 전문적으로 답변해주세요.
-      
-      아기 정보: ${babyInfo ? JSON.stringify(babyInfo) : '정보 없음'}
-      대화 컨텍스트: ${context || '없음'}
-      
-      답변 시 다음을 고려해주세요:
-      1. 부모님의 감정에 공감하기
-      2. 구체적이고 실용적인 조언 제공
-      3. 안전한 양육 방법 제시
-      4. 필요시 전문의 상담 권장
-    `;
+    console.log('🤖 OpenAI API 호출 중...');
 
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
         {
           role: "system",
-          content: systemPrompt
+          content: "당신은 친근하고 도움이 되는 아기 케어 전문가입니다."
         },
         {
           role: "user",
           content: message
         }
       ],
-      max_tokens: 600,
+      max_tokens: 300,
       temperature: 0.7,
     });
 
     const response = completion.choices[0].message.content;
+    console.log('✅ OpenAI 응답 성공');
 
     res.json({
       success: true,
@@ -80,105 +143,43 @@ router.post('/message', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Chat error:', error);
-    
-    // OpenAI API 관련 에러 처리
-    if (error.message.includes('API key') || error.message.includes('authentication')) {
-      return res.status(401).json({ 
-        error: 'OpenAI API 인증 실패',
-        message: 'API 키를 확인해주세요' 
-      });
-    }
+    console.error('❌ 채팅 오류:', error.message);
     
     res.status(500).json({ 
+      success: false,
       error: 'Failed to process chat message',
-      message: error.message 
+      message: error.message
     });
   }
 });
 
-// 채팅 히스토리 조회 API
-router.get('/history', (req, res) => {
-  try {
-    const { limit = 50, offset = 0 } = req.query;
-    
-    // 여기에 데이터베이스에서 채팅 히스토리 조회 로직 추가
-    // 현재는 더미 데이터 반환
-    
-    const dummyHistory = [
-      {
-        id: 1,
-        message: "아기가 밤에 자주 깨는데 어떻게 해야 할까요?",
-        response: "아기의 수면 패턴을 정리하는 방법을 알려드릴게요...",
-        timestamp: new Date(Date.now() - 86400000).toISOString()
-      },
-      {
-        id: 2,
-        message: "이유식은 언제부터 시작해야 하나요?",
-        response: "보통 4-6개월부터 시작하는 것이 좋습니다...",
-        timestamp: new Date(Date.now() - 172800000).toISOString()
-      }
-    ];
-
-    res.json({
-      success: true,
-      history: dummyHistory.slice(offset, offset + parseInt(limit)),
-      total: dummyHistory.length,
-      hasMore: offset + parseInt(limit) < dummyHistory.length
-    });
-
-  } catch (error) {
-    console.error('History fetch error:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch chat history',
-      message: error.message 
-    });
-  }
-});
-
-// 빠른 질문 템플릿 API
+// 빠른 질문 API
 router.get('/quick-questions', (req, res) => {
-  try {
-    const quickQuestions = [
-      {
-        id: 1,
-        question: "아기 수면 패턴 정리 방법",
-        category: "수면"
-      },
-      {
-        id: 2,
-        question: "이유식 시작 시기와 방법",
-        category: "영양"
-      },
-      {
-        id: 3,
-        question: "아기 발달 단계별 체크리스트",
-        category: "발달"
-      },
-      {
-        id: 4,
-        question: "아기 안전 수칙",
-        category: "안전"
-      },
-      {
-        id: 5,
-        question: "아기 질병 증상과 대처법",
-        category: "건강"
-      }
-    ];
-
-    res.json({
-      success: true,
-      questions: quickQuestions
-    });
-
-  } catch (error) {
-    console.error('Quick questions error:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch quick questions',
-      message: error.message 
-    });
-  }
+  const quickQuestions = [
+    {
+      id: 1,
+      category: 'fever_medicine',
+      question: '아기가 열이 나는데 해열제 줘도 될까요?',
+      icon: '🌡️'
+    },
+    {
+      id: 2,
+      category: 'safe_sleep',
+      question: '안전하게 재우는 방법을 알려주세요',
+      icon: '😴'
+    },
+    {
+      id: 3,
+      category: 'vaccination',
+      question: '예방접종 일정이 궁금해요',
+      icon: '💉'
+    }
+  ];
+  
+  res.json({
+    success: true,
+    questions: quickQuestions
+  });
 });
 
 export default router;

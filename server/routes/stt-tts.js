@@ -1,4 +1,4 @@
-// server/routes/stt-tts.js
+// server/routes/stt-tts.js (수정된 버전)
 import express from 'express';
 import multer from 'multer';
 import OpenAI from 'openai';
@@ -7,10 +7,33 @@ import path from 'path';
 
 const router = express.Router();
 
+// 🔥 환경변수 확인 (두 가지 모두 지원)
+const getOpenAIKey = () => {
+  const key = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY;
+  console.log('🔑 STT-TTS OpenAI 키 확인:', {
+    hasOPENAI_API_KEY: !!process.env.OPENAI_API_KEY,
+    hasVITE_OPENAI_API_KEY: !!process.env.VITE_OPENAI_API_KEY,
+    finalKey: !!key
+  });
+  return key;
+};
+
 // OpenAI 클라이언트 초기화
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+let openai;
+const apiKey = getOpenAIKey();
+
+if (apiKey) {
+  try {
+    openai = new OpenAI({
+      apiKey: apiKey,
+    });
+    console.log('✅ STT-TTS OpenAI 초기화 성공');
+  } catch (error) {
+    console.error('❌ STT-TTS OpenAI 초기화 실패:', error.message);
+  }
+} else {
+  console.warn('⚠️ STT-TTS: OpenAI API 키가 설정되지 않았습니다.');
+}
 
 // 파일 업로드 설정
 const upload = multer({
@@ -61,11 +84,14 @@ router.post('/stt', upload.single('audio'), async (req, res) => {
       });
     }
 
-    // OpenAI API 키 확인
-    if (!process.env.OPENAI_API_KEY) {
+    // 🔥 OpenAI 클라이언트 확인
+    if (!openai) {
       return res.status(500).json({
         success: false,
-        error: 'OpenAI API 키가 설정되지 않았습니다.'
+        error: 'OpenAI 서비스를 사용할 수 없습니다. API 키를 확인해주세요.',
+        debug: {
+          hasApiKey: !!getOpenAIKey()
+        }
       });
     }
 
@@ -150,11 +176,14 @@ router.post('/tts', async (req, res) => {
       });
     }
 
-    // OpenAI API 키 확인
-    if (!process.env.OPENAI_API_KEY) {
+    // 🔥 OpenAI 클라이언트 확인
+    if (!openai) {
       return res.status(500).json({
         success: false,
-        error: 'OpenAI API 키가 설정되지 않았습니다.'
+        error: 'OpenAI 서비스를 사용할 수 없습니다. API 키를 확인해주세요.',
+        debug: {
+          hasApiKey: !!getOpenAIKey()
+        }
       });
     }
 
@@ -244,11 +273,14 @@ router.get('/stt/languages', (req, res) => {
 
 // API 상태 확인
 router.get('/status', (req, res) => {
+  const apiKey = getOpenAIKey();
+  
   res.json({
     success: true,
     timestamp: new Date().toISOString(),
     services: {
-      openai: !!process.env.OPENAI_API_KEY,
+      openai: !!apiKey,
+      openaiInitialized: !!openai,
       stt: 'whisper-1',
       tts: 'tts-1',
       uploadsDir: fs.existsSync(uploadsDir)
@@ -257,6 +289,10 @@ router.get('/status', (req, res) => {
       fileSize: '25MB',
       textLength: '4096 characters',
       supportedFormats: ['wav', 'mp3', 'mp4', 'mpeg', 'ogg', 'webm', 'flac']
+    },
+    debug: {
+      hasOPENAI_API_KEY: !!process.env.OPENAI_API_KEY,
+      hasVITE_OPENAI_API_KEY: !!process.env.VITE_OPENAI_API_KEY
     }
   });
 });

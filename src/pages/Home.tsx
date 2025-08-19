@@ -15,6 +15,8 @@ import {
   Activity
 } from "lucide-react";
 
+// RAG 챗봇은 기존 GlobalChatbot에 통합됨
+
 interface LogEntry {
   id: number;
   ts: string;
@@ -30,6 +32,13 @@ interface SensorData {
   jetsonConnected: boolean;
 }
 
+// 🔥 아기 정보 인터페이스
+interface BabyInfo {
+  name: string;
+  ageInMonths: number;
+  weight: number;
+}
+
 export default function Home() {
   const [logs] = useState<LogEntry[]>(() => {
     const stored = localStorage.getItem("baby-logs");
@@ -42,6 +51,13 @@ export default function Home() {
     babyTemperature: 36.8,
     timestamp: new Date().toISOString(),
     jetsonConnected: false
+  });
+
+  // 🔥 아기 정보 상태 (RAG 챗봇에서 사용)
+  const [babyInfo] = useState<BabyInfo>({
+    name: '우리 아기', // 실제 아기 이름으로 변경 가능
+    ageInMonths: 8,     // 실제 개월 수로 변경 가능
+    weight: 8.5         // 실제 체중으로 변경 가능
   });
 
   const last = logs.length > 0 ? logs[logs.length - 1] : null;
@@ -94,28 +110,28 @@ export default function Home() {
       color: 'text-blue-600', 
       bgColor: 'bg-blue-100',
       ringColor: 'ring-blue-200',
-      alertLevel: 'warning'
+      alertLevel: 'warning' as const
     };
     if (temp <= 37.5) return { 
       status: '정상', 
       color: 'text-green-600', 
       bgColor: 'bg-green-100',
       ringColor: 'ring-green-200',
-      alertLevel: 'normal'
+      alertLevel: 'normal' as const
     };
     if (temp <= 38.0) return { 
       status: '미열', 
       color: 'text-yellow-600', 
       bgColor: 'bg-yellow-100',
       ringColor: 'ring-yellow-200',
-      alertLevel: 'warning'
+      alertLevel: 'warning' as const
     };
     return { 
       status: '고열', 
       color: 'text-red-600', 
       bgColor: 'bg-red-100',
       ringColor: 'ring-red-200',
-      alertLevel: 'danger'
+      alertLevel: 'danger' as const
     };
   };
 
@@ -133,11 +149,11 @@ export default function Home() {
           </div>
           <h1 className="hero-title">
             사랑스러운<br />
-            <span className="hero-title-highlight">우리 아기</span>
+            <span className="hero-title-highlight">{babyInfo.name}</span>
           </h1>
           <p className="hero-subtitle">
             ✨<br />
-            오늘 하루의 활동을 보여드릴게요.
+            {babyInfo.ageInMonths}개월 아기의 하루를 보여드릴게요.
           </p>
         </div>
 
@@ -215,6 +231,19 @@ export default function Home() {
             )}
           </div>
         </div>
+        
+        {/* 🔥 젯슨나노 연결 끊김 시 챗봇 활용 안내 */}
+        {!sensorData.jetsonConnected && (
+          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-xl">
+            <div className="flex items-center gap-2 text-blue-800">
+              <Baby className="w-4 h-4" />
+              <span className="text-sm font-medium">육아 상담사가 도와드릴게요!</span>
+            </div>
+            <p className="text-xs text-blue-700 mt-1">
+              센서 연결이 원활하지 않을 때도 우측 하단 챗봇을 통해 전문적인 육아 조언을 받으실 수 있어요.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* 상태 요약 카드 */}
@@ -254,8 +283,12 @@ export default function Home() {
             </div>
             <p className="text-sm font-medium text-stone-600">실내 온도</p>
             <div className="mt-2">
-              <div className="inline-block px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                적정 온도
+              <div className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
+                sensorData.roomTemperature >= 21 && sensorData.roomTemperature <= 24
+                  ? 'bg-green-100 text-green-700'
+                  : 'bg-orange-100 text-orange-700'
+              }`}>
+                {sensorData.roomTemperature >= 21 && sensorData.roomTemperature <= 24 ? '적정 온도' : '조절 필요'}
               </div>
             </div>
           </div>
@@ -307,28 +340,42 @@ export default function Home() {
           {/* 체온 상태에 따른 알림 */}
           {tempStatus.alertLevel === 'danger' && (
             <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl">
-              <AlertTriangle className="w-5 h-5 text-red-600" />
-              <div>
+              <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0" />
+              <div className="flex-1">
                 <p className="text-sm font-medium text-red-800">주의가 필요합니다</p>
                 <p className="text-xs text-red-600">체온이 정상 범위를 벗어났습니다. 의료진과 상담을 권장합니다.</p>
+                {/* 🔥 챗봇 연결 안내 */}
+                <p className="text-xs text-red-700 mt-1 font-medium">
+                  💬 우측 하단 상담사에게 해열제 사용법을 문의해보세요.
+                </p>
               </div>
             </div>
           )}
 
           {tempStatus.alertLevel === 'warning' && (
             <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-xl">
-              <Activity className="w-5 h-5 text-yellow-600" />
-              <div>
+              <Activity className="w-5 h-5 text-yellow-600 flex-shrink-0" />
+              <div className="flex-1">
                 <p className="text-sm font-medium text-yellow-800">관찰이 필요합니다</p>
                 <p className="text-xs text-yellow-600">체온 변화를 지속적으로 모니터링하세요.</p>
+                {/* 🔥 챗봇 연결 안내 */}
+                <p className="text-xs text-yellow-700 mt-1 font-medium">
+                  💬 체온 관리법이 궁금하시면 상담사에게 문의하세요.
+                </p>
               </div>
             </div>
           )}
 
           {tempStatus.alertLevel === 'normal' && (
             <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-xl">
-              <Sparkles className="w-5 h-5 text-green-600" />
-              <p className="text-sm font-medium text-green-800">정상 체온 범위입니다. 건강한 상태를 유지하고 있어요! 👶✨</p>
+              <Sparkles className="w-5 h-5 text-green-600 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-green-800">정상 체온 범위입니다. 건강한 상태를 유지하고 있어요! 👶✨</p>
+                {/* 🔥 예방적 상담 안내 */}
+                <p className="text-xs text-green-700 mt-1">
+                  💬 예방접종이나 수면환경에 대해 궁금한 점이 있으시면 언제든 상담하세요.
+                </p>
+              </div>
             </div>
           )}
 
@@ -341,7 +388,7 @@ export default function Home() {
         </div>
       </div>
 
-
+      {/* RAG 기능은 기존 GlobalChatbot에 통합됨 */}
     </div>
   );
 }

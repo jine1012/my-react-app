@@ -47,9 +47,8 @@ import diaryRoutes from './routes/diary.js';
 import cryDetectionRoutes from './routes/cry-detection.js';
 import sleepRoutes from './routes/sleep.js';
 import babyMonitorRoutes from './routes/baby-monitor.js';
-
-// 🔥 새로 추가: STT/TTS 라우트
 import sttTtsRoutes from './routes/stt-tts.js';
+import babyCareRAGRoutes from './routes/baby-care-rag.js';
 
 app.use('/api/baby', babyRoutes);
 app.use('/api/chat', chatRoutes);
@@ -57,11 +56,10 @@ app.use('/api/diary', diaryRoutes);
 app.use('/api/cry-detection', cryDetectionRoutes);
 app.use('/api/sleep', sleepRoutes);
 app.use('/api', babyMonitorRoutes);
-
-// 🔥 STT/TTS API 라우트 추가
 app.use('/api/voice', sttTtsRoutes);
+app.use('/api/baby-care-rag', babyCareRAGRoutes);
 
-// Health check 엔드포인트
+/// Health check 엔드포인트 업데이트
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'OK',
@@ -69,9 +67,10 @@ app.get('/api/health', (req, res) => {
     version: '1.0.0',
     services: {
       nodejs: 'running',
-      openai: process.env.OPENAI_API_KEY ? 'configured' : 'not configured',
-      sttTts: process.env.OPENAI_API_KEY ? 'available' : 'unavailable',
-      jetsonNano: process.env.JETSON_NANO_URL || 'http://192.168.0.94:5000'
+      openai: process.env.VITE_OPENAI_API_KEY ? 'configured' : 'not configured',
+      sttTts: process.env.VITE_OPENAI_API_KEY ? 'available' : 'unavailable',
+      jetsonNano: process.env.JETSON_NANO_URL || 'http://192.168.0.94:5000',
+      ragChatbot: process.env.VITE_OPENAI_API_KEY ? 'active' : 'inactive' // 🔥 추가
     },
     features: {
       babyMonitoring: 'active',
@@ -79,8 +78,14 @@ app.get('/api/health', (req, res) => {
       cryDetection: 'active',
       chatbot: 'active',
       diary: 'active',
-      voiceSTT: process.env.OPENAI_API_KEY ? 'active' : 'inactive',
-      voiceTTS: process.env.OPENAI_API_KEY ? 'active' : 'inactive'
+      voiceSTT: process.env.VITE_OPENAI_API_KEY ? 'active' : 'inactive',
+      voiceTTS: process.env.VITE_OPENAI_API_KEY ? 'active' : 'inactive',
+      ragBabyCare: process.env.VITE_OPENAI_API_KEY ? 'active' : 'inactive' // 🔥 추가
+    },
+    ragKnowledge: { // 🔥 RAG 지식베이스 정보 추가
+      topics: ['vaccination', 'fever_medicine', 'safe_sleep'],
+      totalCategories: 3,
+      ageRange: '0-24개월'
     }
   });
 });
@@ -188,6 +193,14 @@ app.listen(PORT, () => {
     console.log(`🤖 Jetson Nano: ${process.env.JETSON_NANO_URL}`);
   } else {
     console.log(`⚠️  Jetson Nano URL이 설정되지 않았습니다. 환경변수 JETSON_NANO_URL을 설정하세요.`);
+  }
+
+  // RAG 챗봇 상태 로그 
+  if (process.env.VITE_OPENAI_API_KEY) {
+    console.log(`🧠 RAG Baby Care Chatbot: ACTIVE`);
+    console.log(`📚 Knowledge Base: 3 topics (vaccination, fever_medicine, safe_sleep)`);
+  } else {
+    console.log(`⚠️  RAG Baby Care Chatbot: INACTIVE (OpenAI API key required)`);
   }
 });
 
