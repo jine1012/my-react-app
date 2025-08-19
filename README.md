@@ -68,7 +68,7 @@ my-react-app/
    
    `.env` 파일에서 OpenAI API 키를 설정하세요:
    ```
-   OPENAI_API_KEY=your_openai_api_key_here
+   VITE_OPENAI_API_KEY=your_openai_api_key_here
    ```
 
 3. **개발 서버 실행**
@@ -125,7 +125,7 @@ my-react-app/
 ### Environment Variables
 - `PORT` - 서버 포트 (기본값: 5000)
 - `NODE_ENV` - 실행 환경 (development/production)
-- `OPENAI_API_KEY` - OpenAI API 키
+- `VITE_OPENAI_API_KEY` - OpenAI API 키
 
 ### CORS 설정
 개발 환경에서는 `http://localhost:3000`과 `http://localhost:5173`에서의 요청을 허용합니다.

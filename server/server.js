@@ -52,7 +52,7 @@ app.get('/api/health', (req, res) => {
     version: '1.0.0',
     environment: process.env.NODE_ENV || 'development',
     services: {
-      openai: process.env.OPENAI_API_KEY ? 'configured' : 'not configured',
+      openai: process.env.VITE_OPENAI_API_KEY ? 'configured' : 'not configured',
       jetsonNano: process.env.JETSON_NANO_URL || 'not configured',
       database: 'memory-based'
     }

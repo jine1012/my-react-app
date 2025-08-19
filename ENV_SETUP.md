@@ -14,7 +14,7 @@ PORT=5000
 NODE_ENV=development
 
 # OpenAI Configuration
-OPENAI_API_KEY=your_openai_api_key_here
+VITE_OPENAI_API_KEY=your_openai_api_key_here
 
 # Raspberry Pi Flask Server Configuration
 RASPBERRY_PI_URL=http://192.168.0.94:5000
@@ -24,7 +24,7 @@ RASPBERRY_PI_URL=http://192.168.0.94:5000
 
 1. [OpenAI 웹사이트](https://platform.openai.com/)에 로그인
 2. API Keys 섹션에서 새 API 키 생성
-3. 생성된 키를 `.env` 파일의 `OPENAI_API_KEY`에 설정
+3. 생성된 키를 `.env` 파일의 `VITE_OPENAI_API_KEY`에 설정
 
 **⚠️ 주의사항:**
 - API 키는 절대 공개 저장소에 커밋하지 마세요

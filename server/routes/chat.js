@@ -5,9 +5,9 @@ const router = express.Router();
 
 // OpenAI API 키 검증
 const validateOpenAIKey = () => {
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error('OpenAI API 키가 설정되지 않았습니다. .env 파일에 OPENAI_API_KEY를 추가해주세요.');
-  }
+  if (!process.env.VITE_OPENAI_API_KEY) {
+  throw new Error('OpenAI API 키가 설정되지 않았습니다. .env 파일에 VITE_OPENAI_API_KEY를 추가해주세요.');
+}
   return true;
 };
 
@@ -16,7 +16,7 @@ let openai;
 try {
   validateOpenAIKey();
   openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
+    apiKey: process.env.VITE_OPENAI_API_KEY,
   });
 } catch (error) {
   console.warn('OpenAI 초기화 실패:', error.message);

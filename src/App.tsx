@@ -5,6 +5,8 @@ import GlobalChatbot from './components/GlobalChatbot';
 import Splash from "./components/Splash";
 import "./App.css";
 
+
+
 export default function App() {
   return (
     <AppLayout>

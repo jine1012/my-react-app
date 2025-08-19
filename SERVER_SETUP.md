@@ -23,7 +23,7 @@ PORT=5000
 NODE_ENV=development
 
 # OpenAI Configuration
-OPENAI_API_KEY=your_openai_api_key_here
+VITE_OPENAI_API_KEY=your_openai_api_key_here
 
 # Raspberry Pi Flask Server Configuration
 RASPBERRY_PI_URL=http://192.168.0.94:5000

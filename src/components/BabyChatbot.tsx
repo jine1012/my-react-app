@@ -1,6 +1,6 @@
 // src/components/BabyChatbot.tsx
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, AlertTriangle, Baby, Clock, RefreshCw } from 'lucide-react';
+import { Send, Loader2, AlertTriangle, Baby, Clock, RefreshCw, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 import { useBabyAdvice } from '../hooks/useBabyAdvice';
 
 interface BabyChatbotProps {
@@ -16,6 +16,19 @@ export const BabyChatbot: React.FC<BabyChatbotProps> = ({
   const [showQuickActions, setShowQuickActions] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  
+  // 🎤 음성 관련 상태
+  const [isRecording, setIsRecording] = useState(false);
+  const [isProcessingVoice, setIsProcessingVoice] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+  const [autoPlayTTS, setAutoPlayTTS] = useState(true);
+  const [selectedVoice, setSelectedVoice] = useState('nova');
+  
+  // 🎤 음성 관련 refs
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
   
   const { 
     messages, 
@@ -33,6 +46,26 @@ export const BabyChatbot: React.FC<BabyChatbotProps> = ({
     }
   }, [messages, isLoading]);
 
+  // 🎤 음성 에러 자동 숨김
+  useEffect(() => {
+    if (voiceError) {
+      const timer = setTimeout(() => setVoiceError(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [voiceError]);
+
+  // 🎤 컴포넌트 언마운트 시 정리
+  useEffect(() => {
+    return () => {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        mediaRecorderRef.current.stop();
+      }
+      if (currentAudioRef.current) {
+        currentAudioRef.current.pause();
+      }
+    };
+  }, []);
+
   // 초기 웰컴 메시지
   useEffect(() => {
     if (messages.length === 0) {
@@ -49,6 +82,16 @@ ${babyAgeInMonths !== undefined
     }
   }, [babyAgeInMonths]);
 
+  // 🎤 새 응답이 왔을 때 자동 TTS 재생
+  useEffect(() => {
+    if (autoPlayTTS && lastResponse && !isSpeaking && messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.role === 'assistant') {
+        playTTS(lastMessage.content);
+      }
+    }
+  }, [messages, autoPlayTTS, isSpeaking]);
+
   const quickActions = [
     { text: "아기가 계속 울어요", icon: "😭" },
     { text: "배고픈 것 같아요", icon: "🍼" },
@@ -57,6 +100,156 @@ ${babyAgeInMonths !== undefined
     { text: "열이 있는 것 같아요", icon: "🌡️" },
     { text: "아픈 것 같아요", icon: "😰" }
   ];
+
+  // 🎤 음성 녹음 시작
+  const startRecording = async () => {
+    try {
+      setVoiceError(null);
+      
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        }
+      });
+
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4'
+      });
+
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        stream.getTracks().forEach(track => track.stop());
+        processRecording();
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (error) {
+      console.error('녹음 시작 오류:', error);
+      setVoiceError('마이크 접근 권한이 필요합니다. 브라우저 설정을 확인해주세요.');
+    }
+  };
+
+  // 🎤 음성 녹음 정지
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  // 🎤 녹음된 오디오 처리 (STT)
+  const processRecording = async () => {
+    if (audioChunksRef.current.length === 0) {
+      setVoiceError('녹음된 오디오가 없습니다.');
+      return;
+    }
+
+    setIsProcessingVoice(true);
+    
+    try {
+      const audioBlob = new Blob(audioChunksRef.current, { 
+        type: 'audio/webm' 
+      });
+
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'recording.webm');
+
+      const response = await fetch('/api/voice/stt', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (result.success && result.text) {
+        setInput(result.text);
+        setShowQuickActions(false);
+        // 자동으로 메시지 전송
+        await handleVoiceMessage(result.text);
+      } else {
+        setVoiceError(result.error || '음성 인식에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('STT 처리 오류:', error);
+      setVoiceError('음성 처리 중 오류가 발생했습니다.');
+    } finally {
+      setIsProcessingVoice(false);
+    }
+  };
+
+  // 🎤 TTS 음성 재생
+  const playTTS = async (text: string) => {
+    try {
+      setIsSpeaking(true);
+
+      const response = await fetch('/api/voice/tts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text,
+          voice: selectedVoice,
+          speed: 1.0
+        }),
+      });
+
+      if (response.ok) {
+        const audioBlob = await response.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        
+        currentAudioRef.current = audio;
+
+        audio.onended = () => {
+          setIsSpeaking(false);
+          URL.revokeObjectURL(audioUrl);
+          currentAudioRef.current = null;
+        };
+
+        audio.onerror = () => {
+          setIsSpeaking(false);
+          URL.revokeObjectURL(audioUrl);
+          currentAudioRef.current = null;
+          setVoiceError('음성 재생에 실패했습니다.');
+        };
+
+        await audio.play();
+      } else {
+        throw new Error('TTS 요청 실패');
+      }
+    } catch (error) {
+      console.error('TTS 재생 오류:', error);
+      setIsSpeaking(false);
+    }
+  };
+
+  // 🎤 음성 재생 중지
+  const stopSpeaking = () => {
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current.currentTime = 0;
+      setIsSpeaking(false);
+    }
+  };
+
+  // 🎤 음성 메시지 처리
+  const handleVoiceMessage = async (messageText: string) => {
+    setInput('');
+    setShowQuickActions(false);
+    await sendMessage(messageText);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,11 +278,51 @@ ${babyAgeInMonths !== undefined
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-b from-blue-50 to-white">
+      {/* 🎤 음성 설정 헤더 */}
+      <div className="bg-white border-b border-gray-200 p-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Baby className="text-blue-500" size={20} />
+            <span className="font-semibold text-gray-700">아기 울음 상담사</span>
+            {babyAgeInMonths !== undefined && (
+              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                {babyAgeInMonths}개월
+              </span>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-3 text-sm">
+            {/* 음성 선택 */}
+            <select 
+              value={selectedVoice}
+              onChange={(e) => setSelectedVoice(e.target.value)}
+              className="text-xs border border-gray-200 rounded px-2 py-1"
+            >
+              <option value="nova">Nova (여성)</option>
+              <option value="shimmer">Shimmer (여성)</option>
+              <option value="alloy">Alloy (중성)</option>
+              <option value="echo">Echo (남성)</option>
+            </select>
+            
+            {/* 자동 재생 토글 */}
+            <label className="flex items-center gap-1 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={autoPlayTTS}
+                onChange={(e) => setAutoPlayTTS(e.target.checked)}
+                className="w-3 h-3"
+              />
+              <span className="text-xs text-gray-600">자동재생</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
       {/* 메시지 영역 */}
       <div 
         ref={messagesContainerRef}
         className="flex-1 overflow-y-auto p-4 space-y-4"
-        style={{ maxHeight: 'calc(100vh - 200px)' }}
+        style={{ maxHeight: 'calc(100vh - 300px)' }}
       >
         {/* 웰컴 메시지 */}
         {messages.length === 0 && !isLoading && (
@@ -105,6 +338,10 @@ ${babyAgeInMonths !== undefined
                 <><br /><br />현재 등록된 아기 월령: <strong>{babyAgeInMonths}개월</strong></>
               )}
               <br /><br />어떤 도움이 필요하신가요?
+              <br />
+              <span className="text-xs bg-blue-100 px-2 py-1 rounded mt-2 inline-block">
+                🎤 음성으로도 질문할 수 있어요!
+              </span>
             </p>
           </div>
         )}
@@ -123,9 +360,20 @@ ${babyAgeInMonths !== undefined
               }`}
             >
               {message.role === 'assistant' && (
-                <div className="flex items-center gap-2 mb-2">
-                  <Baby size={16} className="text-blue-500" />
-                  <span className="text-xs font-semibold text-blue-600">아기 상담사</span>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Baby size={16} className="text-blue-500" />
+                    <span className="text-xs font-semibold text-blue-600">아기 상담사</span>
+                  </div>
+                  {/* 🎤 TTS 재생 버튼 */}
+                  <button
+                    onClick={() => playTTS(message.content)}
+                    disabled={isSpeaking}
+                    className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 disabled:opacity-50 flex items-center gap-1"
+                  >
+                    <Volume2 size={12} />
+                    듣기
+                  </button>
                 </div>
               )}
               <p className="text-sm whitespace-pre-wrap leading-relaxed">
@@ -149,7 +397,7 @@ ${babyAgeInMonths !== undefined
         ))}
         
         {/* 답변 대기중 표시 - 개선된 메시지 */}
-        {isLoading && (
+        {(isLoading || isProcessingVoice) && (
           <div className="flex justify-start">
             <div className="bg-white border border-gray-200 rounded-xl px-4 py-3 shadow-sm">
               <div className="flex items-center gap-2 mb-2">
@@ -158,7 +406,9 @@ ${babyAgeInMonths !== undefined
               </div>
               <div className="flex items-center gap-3">
                 <Loader2 className="animate-spin text-blue-500" size={16} />
-                <span className="text-sm text-gray-600">답변을 준비하고 있어요...</span>
+                <span className="text-sm text-gray-600">
+                  {isProcessingVoice ? '음성을 인식하고 있어요...' : '답변을 준비하고 있어요...'}
+                </span>
               </div>
               <p className="text-xs text-gray-500 mt-1">
                 아기에게 맞는 조언을 찾고 있습니다 💭
@@ -249,20 +499,76 @@ ${babyAgeInMonths !== undefined
         <div ref={messagesEndRef} />
       </div>
 
-      {/* 입력 영역 */}
-      <div className="border-t border-gray-200 p-4 bg-white">
+      {/* 🎤 음성 오류 메시지 */}
+      {voiceError && (
+        <div className="mx-4 mb-2 p-2 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-red-700">🎤 {voiceError}</span>
+            <button onClick={() => setVoiceError(null)} className="text-red-500">✕</button>
+          </div>
+        </div>
+      )}
+
+      {/* 🎤 음성 컨트롤 + 입력 영역 */}
+      <div className="border-t border-gray-200 p-4 bg-white space-y-3">
+        {/* 음성 컨트롤 버튼들 */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={isRecording ? stopRecording : startRecording}
+            disabled={isLoading || isProcessingVoice}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+              isRecording
+                ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse'
+                : 'bg-blue-500 hover:bg-blue-600 text-white'
+            } disabled:opacity-50`}
+          >
+            {isRecording ? (
+              <>
+                <MicOff size={16} />
+                녹음 중지
+              </>
+            ) : (
+              <>
+                <Mic size={16} />
+                음성 질문
+              </>
+            )}
+          </button>
+
+          {isSpeaking && (
+            <button
+              onClick={stopSpeaking}
+              className="flex items-center gap-2 px-3 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg"
+            >
+              <VolumeX size={16} />
+              음성 정지
+            </button>
+          )}
+
+          {/* 상태 표시 */}
+          <div className="flex-1 text-center">
+            {isRecording && (
+              <span className="text-sm text-red-600 animate-pulse">🎤 말씀하세요...</span>
+            )}
+            {isSpeaking && (
+              <span className="text-sm text-blue-600 animate-pulse">🔊 음성 재생 중...</span>
+            )}
+          </div>
+        </div>
+
+        {/* 텍스트 입력 */}
         <form onSubmit={handleSubmit} className="flex gap-2">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="아기 상태를 자세히 설명해주세요..."
-            disabled={isLoading}
+            placeholder="아기 상태를 자세히 설명해주세요... (또는 음성으로 질문하세요)"
+            disabled={isLoading || isRecording}
             className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:text-gray-500"
           />
           <button
             type="submit"
-            disabled={!input.trim() || isLoading}
+            disabled={!input.trim() || isLoading || isRecording}
             className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white p-2 rounded-lg transition-colors flex items-center justify-center"
           >
             {isLoading ? (
@@ -274,7 +580,7 @@ ${babyAgeInMonths !== undefined
         </form>
         
         {/* 입력 도움말 */}
-        <p className="text-xs text-gray-500 mt-2 text-center">
+        <p className="text-xs text-gray-500 text-center">
           💡 "아기가 30분째 울고 있어요", "수유 후에도 계속 울어요" 처럼 구체적으로 설명해주세요
         </p>
       </div>
