@@ -6,8 +6,8 @@ import path from 'path';
 
 const router = express.Router();
 
-// 라즈베리파이 Flask 서버 설정
-const PI_API_BASE = process.env.RASPBERRY_PI_URL || 'http://192.168.0.94:5000';
+// Jetson Nano 서버 설정
+const JETSON_API_BASE = process.env.JETSON_NANO_URL || 'http://192.168.0.100:5000';
 
 // 현재 울음 감지 상태를 메모리에 저장 (실제 환경에서는 데이터베이스 사용 권장)
 let detectionState = {
@@ -22,10 +22,10 @@ let detectionState = {
 // 울음 감지 시작
 router.post('/start', async (req, res) => {
   try {
-    console.log('🚀 울음 감지 시작 요청 - 라즈베리파이로 전송 중...');
+    console.log('🚀 울음 감지 시작 요청 - Jetson Nano로 전송 중...');
     
-    // 라즈베리파이 Flask 서버의 /start 엔드포인트로 요청
-    const response = await axios.post(`${PI_API_BASE}/start`, {}, {
+    // Jetson Nano Flask 서버의 /start 엔드포인트로 요청
+    const response = await axios.post(`${JETSON_API_BASE}/start`, {}, {
       timeout: 10000, // 10초 타임아웃
       headers: {
         'Content-Type': 'application/json'
@@ -45,7 +45,7 @@ router.post('/start', async (req, res) => {
         timestamp: detectionState.lastStartTime
       });
     } else {
-      throw new Error('라즈베리파이에서 예상하지 못한 응답을 받았습니다.');
+      throw new Error('Jetson Nano에서 예상하지 못한 응답을 받았습니다.');
     }
 
   } catch (error) {
@@ -54,11 +54,11 @@ router.post('/start', async (req, res) => {
     // 에러 타입에 따른 상세 메시지
     let errorMessage = '울음 감지 시작에 실패했습니다.';
     if (error.code === 'ECONNREFUSED') {
-      errorMessage = '라즈베리파이에 연결할 수 없습니다. 네트워크를 확인해주세요.';
+      errorMessage = 'Jetson Nano에 연결할 수 없습니다. 네트워크를 확인해주세요.';
     } else if (error.code === 'ENOTFOUND') {
-      errorMessage = '라즈베리파이 주소를 찾을 수 없습니다.';
+      errorMessage = 'Jetson Nano 주소를 찾을 수 없습니다.';
     } else if (error.code === 'ETIMEDOUT') {
-      errorMessage = '라즈베리파이 응답 시간이 초과되었습니다.';
+      errorMessage = 'Jetson Nano 응답 시간이 초과되었습니다.';
     }
 
     res.status(500).json({
@@ -73,10 +73,10 @@ router.post('/start', async (req, res) => {
 // 울음 감지 중지
 router.post('/stop', async (req, res) => {
   try {
-    console.log('🛑 울음 감지 중지 요청 - 라즈베리파이로 전송 중...');
+    console.log('🛑 울음 감지 중지 요청 - Jetson Nano로 전송 중...');
     
-    // 라즈베리파이 Flask 서버의 /stop 엔드포인트로 요청
-    const response = await axios.post(`${PI_API_BASE}/stop`, {}, {
+    // Jetson Nano Flask 서버의 /stop 엔드포인트로 요청
+    const response = await axios.post(`${JETSON_API_BASE}/stop`, {}, {
       timeout: 10000,
       headers: {
         'Content-Type': 'application/json'
@@ -96,7 +96,7 @@ router.post('/stop', async (req, res) => {
         timestamp: detectionState.lastStopTime
       });
     } else {
-      throw new Error('라즈베리파이에서 예상하지 못한 응답을 받았습니다.');
+      throw new Error('Jetson Nano에서 예상하지 못한 응답을 받았습니다.');
     }
 
   } catch (error) {
@@ -104,11 +104,11 @@ router.post('/stop', async (req, res) => {
     
     let errorMessage = '울음 감지 중지에 실패했습니다.';
     if (error.code === 'ECONNREFUSED') {
-      errorMessage = '라즈베리파이에 연결할 수 없습니다.';
+      errorMessage = 'Jetson Nano에 연결할 수 없습니다.';
     } else if (error.code === 'ENOTFOUND') {
-      errorMessage = '라즈베리파이 주소를 찾을 수 없습니다.';
+      errorMessage = 'Jetson Nano 주소를 찾을 수 없습니다.';
     } else if (error.code === 'ETIMEDOUT') {
-      errorMessage = '라즈베리파이 응답 시간이 초과되었습니다.';
+      errorMessage = 'Jetson Nano 응답 시간이 초과되었습니다.';
     }
 
     res.status(500).json({
@@ -125,20 +125,20 @@ router.get('/status', async (req, res) => {
   try {
     console.log('📊 울음 감지 상태 조회...');
     
-    // 라즈베리파이에서 실제 상태 확인
+    // Jetson Nano에서 실제 상태 확인
     try {
-      const response = await axios.get(`${PI_API_BASE}/status`, {
+      const response = await axios.get(`${JETSON_API_BASE}/status`, {
         timeout: 5000,
         headers: {
           'Content-Type': 'application/json'
         }
       });
       
-      // 라즈베리파이 응답을 기반으로 상태 동기화
+      // Jetson Nano 응답을 기반으로 상태 동기화
       detectionState.isActive = response.data.active || false;
       
-    } catch (piError) {
-      console.warn('⚠️ 라즈베리파이 상태 조회 실패, 로컬 상태 사용:', piError.message);
+    } catch (jetsonError) {
+      console.warn('⚠️ Jetson Nano 상태 조회 실패, 로컬 상태 사용:', jetsonError.message);
     }
     
     res.json({
@@ -161,12 +161,12 @@ router.get('/status', async (req, res) => {
   }
 });
 
-// 라즈베리파이 연결 테스트
+// Jetson Nano 연결 테스트
 router.get('/test-connection', async (req, res) => {
   try {
-    console.log('🔍 라즈베리파이 연결 테스트...');
+    console.log('🔍 Jetson Nano 연결 테스트...');
     
-    const response = await axios.get(`${PI_API_BASE}/health`, {
+    const response = await axios.get(`${JETSON_API_BASE}/health`, {
       timeout: 5000,
       headers: {
         'Content-Type': 'application/json'
@@ -175,40 +175,40 @@ router.get('/test-connection', async (req, res) => {
 
     res.json({
       success: true,
-      message: '라즈베리파이 연결이 정상입니다.',
-      raspberryPi: {
+      message: 'Jetson Nano 연결이 정상입니다.',
+      jetsonNano: {
         status: 'connected',
-        url: PI_API_BASE,
+        url: JETSON_API_BASE,
         response: response.data,
         latency: response.headers['x-response-time'] || 'unknown'
       }
     });
 
   } catch (error) {
-    console.error('❌ 라즈베리파이 연결 테스트 실패:', error.message);
+    console.error('❌ Jetson Nano 연결 테스트 실패:', error.message);
     
-    let errorMessage = '라즈베리파이 연결에 실패했습니다.';
+    let errorMessage = 'Jetson Nano 연결에 실패했습니다.';
     if (error.code === 'ECONNREFUSED') {
-      errorMessage = '라즈베리파이가 실행되지 않거나 네트워크에 연결되지 않았습니다.';
+      errorMessage = 'Jetson Nano가 실행되지 않거나 네트워크에 연결되지 않았습니다.';
     } else if (error.code === 'ENOTFOUND') {
-      errorMessage = '라즈베리파이 주소를 찾을 수 없습니다.';
+      errorMessage = 'Jetson Nano 주소를 찾을 수 없습니다.';
     } else if (error.code === 'ETIMEDOUT') {
-      errorMessage = '라즈베리파이 응답 시간이 초과되었습니다.';
+      errorMessage = 'Jetson Nano 응답 시간이 초과되었습니다.';
     }
 
     res.status(500).json({
       success: false,
       message: errorMessage,
-      raspberryPi: {
+      jetsonNano: {
         status: 'disconnected',
-        url: PI_API_BASE,
+        url: JETSON_API_BASE,
         error: error.message
       }
     });
   }
 });
 
-// 울음 감지 이벤트 수신 (라즈베리파이에서 호출) - 오디오 파일 정보 포함
+// 울음 감지 이벤트 수신 (Jetson Nano에서 호출) - 오디오 파일 정보 포함
 router.post('/detection-event', (req, res) => {
   try {
     const { timestamp, confidence, audioData, source, audio_file_path } = req.body;
@@ -292,7 +292,7 @@ router.get('/audio-files', (req, res) => {
   }
 });
 
-// 특정 오디오 파일 다운로드 (라즈베리파이에서 프록시)
+// 특정 오디오 파일 다운로드 (Jetson Nano에서 프록시)
 router.get('/audio-file/:fileId', async (req, res) => {
   try {
     const { fileId } = req.params;
@@ -306,8 +306,8 @@ router.get('/audio-file/:fileId', async (req, res) => {
       });
     }
     
-    // 라즈베리파이에서 파일 가져오기
-    const response = await axios.get(`${PI_API_BASE}/download-audio`, {
+    // Jetson Nano에서 파일 가져오기
+    const response = await axios.get(`${JETSON_API_BASE}/download-audio`, {
       params: { filePath: fileInfo.filePath },
       responseType: 'stream',
       timeout: 30000
@@ -379,9 +379,9 @@ router.get('/settings', (req, res) => {
     res.json({
       success: true,
       settings: {
-        raspberryPiUrl: PI_API_BASE,
+        jetsonNanoUrl: JETSON_API_BASE,
         confidenceThreshold: 0.8, // 기본값
-        isAudioSavingEnabled: false, // 라즈베리파이에서 확인 필요
+        isAudioSavingEnabled: false, // Jetson Nano에서 확인 필요
         sampleRate: 16000,
         chunkSize: 8192
       }
@@ -401,8 +401,8 @@ router.post('/settings', async (req, res) => {
   try {
     const { confidenceThreshold, audioSaving } = req.body;
     
-    // 라즈베리파이에 설정 전송 (필요한 경우)
-    const response = await axios.post(`${PI_API_BASE}/update-settings`, {
+    // Jetson Nano에 설정 전송 (필요한 경우)
+    const response = await axios.post(`${JETSON_API_BASE}/update-settings`, {
       confidenceThreshold,
       audioSaving
     }, {
@@ -431,15 +431,15 @@ router.post('/settings', async (req, res) => {
 // 시스템 상태 종합 조회
 router.get('/system-status', async (req, res) => {
   try {
-    let raspberryPiStatus = 'disconnected';
-    let raspberryPiInfo = null;
+    let jetsonNanoStatus = 'disconnected';
+    let jetsonNanoInfo = null;
     
     try {
-      const piResponse = await axios.get(`${PI_API_BASE}/health`, { timeout: 3000 });
-      raspberryPiStatus = 'connected';
-      raspberryPiInfo = piResponse.data;
-    } catch (piError) {
-      console.warn('라즈베리파이 상태 확인 실패:', piError.message);
+      const jetsonResponse = await axios.get(`${JETSON_API_BASE}/health`, { timeout: 3000 });
+      jetsonNanoStatus = 'connected';
+      jetsonNanoInfo = jetsonResponse.data;
+    } catch (jetsonError) {
+      console.warn('Jetson Nano 상태 확인 실패:', jetsonError.message);
     }
     
     res.json({
@@ -451,10 +451,10 @@ router.get('/system-status', async (req, res) => {
           memoryUsage: process.memoryUsage(),
           version: process.version
         },
-        raspberryPi: {
-          status: raspberryPiStatus,
-          url: PI_API_BASE,
-          info: raspberryPiInfo
+        jetsonNano: {
+          status: jetsonNanoStatus,
+          url: JETSON_API_BASE,
+          info: jetsonNanoInfo
         },
         detection: {
           isActive: detectionState.isActive,

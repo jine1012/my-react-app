@@ -1,0 +1,30 @@
+# Jetson Nano Baby Monitor Server Requirements
+# Jetson Nano에서 실행하기 위한 Python 패키지들
+
+# Flask 웹 프레임워크
+Flask==2.3.3
+Flask-CORS==4.0.0
+
+# 컴퓨터 비전 및 이미지 처리
+opencv-python==4.8.1.78
+numpy==1.24.3
+
+# 오디오 처리
+PyAudio==0.2.11
+wave==0.0.2
+
+# 시스템 모니터링
+psutil==5.9.6
+
+# Jetson Nano 특화 패키지들
+# Jetson Nano에서는 NVIDIA의 최적화된 버전을 사용
+# opencv-python-headless==4.8.1.78  # Jetson Nano용
+# numpy==1.24.3  # Jetson Nano용
+
+# 추가 유틸리티
+requests==2.31.0
+python-dotenv==1.0.0
+
+# 개발 및 테스트용 (선택사항)
+pytest==7.4.2
+pytest-flask==1.2.0

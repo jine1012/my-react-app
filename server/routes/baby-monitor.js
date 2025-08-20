@@ -4,7 +4,7 @@ import { dbConfig } from '../config/database.js';
 
 const router = express.Router();
 
-// 젯슨나노 서버 URL (환경변수에서 가져오기)
+// Jetson Nano 서버 URL (환경변수에서 가져오기)
 const JETSON_URL = process.env.JETSON_NANO_URL || 'http://192.168.0.100:5000';
 
 // 센서 데이터 저장용 메모리 스토리지
@@ -18,10 +18,10 @@ let currentSensorData = {
 // 센서 데이터 히스토리 (최근 100개 데이터 포인트)
 const sensorDataHistory = [];
 
-// 젯슨나노 연결 상태 확인
+// Jetson Nano 연결 상태 확인
 router.get('/jetson/status', async (req, res) => {
   try {
-    // 실제 젯슨나노와 연결 시도 (시뮬레이션)
+    // 실제 Jetson Nano와 연결 시도 (시뮬레이션)
     // const response = await fetch(`${JETSON_URL}/health`, { timeout: 5000 });
     
     // 현재는 시뮬레이션으로 랜덤 연결 상태
@@ -33,7 +33,7 @@ router.get('/jetson/status', async (req, res) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('젯슨나노 연결 확인 실패:', error.message);
+    console.error('Jetson Nano 연결 확인 실패:', error.message);
     res.json({ 
       connected: false, 
       error: error.message,
@@ -45,7 +45,7 @@ router.get('/jetson/status', async (req, res) => {
 // 센서 데이터 조회
 router.get('/sensors/data', async (req, res) => {
   try {
-    // 젯슨나노에서 실제 센서 데이터 가져오기 시도
+    // Jetson Nano에서 실제 센서 데이터 가져오기 시도
     // const response = await fetch(`${JETSON_URL}/sensors/all`, { timeout: 3000 });
     
     // 시뮬레이션 데이터 생성
@@ -133,7 +133,7 @@ router.get('/sensors/temperature/threshold', (req, res) => {
   res.json(threshold);
 });
 
-// 카메라 전환 (젯슨나노 연동)
+// 카메라 전환 (Jetson Nano 연동)
 router.post('/camera/switch', async (req, res) => {
   const { cameraType } = req.body;
   
@@ -142,7 +142,7 @@ router.post('/camera/switch', async (req, res) => {
   }
   
   try {
-    // 젯슨나노에 카메라 전환 명령 전송
+    // Jetson Nano에 카메라 전환 명령 전송
     // const response = await fetch(`${JETSON_URL}/camera/switch`, {
     //   method: 'POST',
     //   headers: { 'Content-Type': 'application/json' },
@@ -182,7 +182,7 @@ router.post('/camera/switch', async (req, res) => {
 // 녹화 시작
 router.post('/recording/start', async (req, res) => {
   try {
-    // 젯슨나노에 녹화 시작 명령 전송
+    // Jetson Nano에 녹화 시작 명령 전송
     // const response = await fetch(`${JETSON_URL}/recording/start`, { method: 'POST' });
     
     const recordingLog = {
@@ -217,7 +217,7 @@ router.post('/recording/start', async (req, res) => {
 // 녹화 중지
 router.post('/recording/stop', async (req, res) => {
   try {
-    // 젯슨나노에 녹화 중지 명령 전송
+    // Jetson Nano에 녹화 중지 명령 전송
     // const response = await fetch(`${JETSON_URL}/recording/stop`, { method: 'POST' });
     
     const recordingLog = {
@@ -259,7 +259,7 @@ router.get('/recordings', (req, res) => {
   res.json(recordings);
 });
 
-// 비디오 스트림 프록시 (젯슨나노 스트림을 클라이언트로 전달)
+// 비디오 스트림 프록시 (Jetson Nano 스트림을 클라이언트로 전달)
 router.get('/video/stream/:type', async (req, res) => {
   const { type } = req.params; // 'normal' 또는 'infrared'
   
@@ -268,7 +268,7 @@ router.get('/video/stream/:type', async (req, res) => {
   }
   
   try {
-    // 실제 젯슨나노 스트림 연결
+    // 실제 Jetson Nano 스트림 연결
     // const streamResponse = await fetch(`${JETSON_URL}/video/stream/${type}`, {
     //   headers: { 'Accept': 'multipart/x-mixed-replace' }
     // });
@@ -281,7 +281,7 @@ router.get('/video/stream/:type', async (req, res) => {
       'Pragma': 'no-cache'
     });
     
-    // 시뮬레이션 스트림 (실제로는 젯슨나노에서 받은 데이터를 전달)
+    // 시뮬레이션 스트림 (실제로는 Jetson Nano에서 받은 데이터를 전달)
     res.write(`--frame\r\nContent-Type: text/plain\r\n\r\n${type} camera stream simulation\r\n`);
     
   } catch (error) {
@@ -387,7 +387,7 @@ router.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     services: {
       sensorData: currentSensorData ? 'active' : 'inactive',
-      jetsonConnection: 'simulated', // 실제로는 젯슨나노 연결 상태
+      jetsonConnection: 'simulated', // 실제로는 Jetson Nano 연결 상태
       database: 'memory-based'
     },
     dataPoints: {
