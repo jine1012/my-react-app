@@ -1,6 +1,6 @@
 // src/pages/Live.tsx
 import { useState, useEffect } from "react";
-import { Camera, Video, Play, Square, AlertTriangle, Mic, MicOff } from "lucide-react";
+import { Camera, Video, AlertTriangle, Mic, MicOff } from "lucide-react";
 
 export default function Live() {
   const [detectionOn, setDetectionOn] = useState(false); // 울음 감지 ON/OFF 상태

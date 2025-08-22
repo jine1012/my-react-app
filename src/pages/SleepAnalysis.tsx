@@ -2,10 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { Moon, Sun, Clock, Calendar, ChevronLeft, ChevronRight, TrendingUp, Baby, ArrowUp, ArrowDown, Lightbulb, RefreshCw } from 'lucide-react';
 import { 
-  getSleepRecords, 
-  getSleepStatistics, 
-  getSleepPrediction, 
-  getSleepInsights,
   getSleepQualityColor,
   getSleepQualityText,
   formatTime,
@@ -20,94 +16,147 @@ export default function SleepAnalysis() {
   const [sleepData, setSleepData] = useState<SleepRecord[]>([]);
   const [statistics, setStatistics] = useState<SleepStatistics | null>(null);
   const [prediction, setPrediction] = useState<SleepPrediction | null>(null);
-  const [insights, setInsights] = useState<SleepInsights | null>(null);
-  const [loading, setLoading] = useState({
-    data: false,
-    prediction: false,
-    insights: false
-  });
-  const [error, setError] = useState<string | null>(null);
+  const [insights, setSleepInsights] = useState<SleepInsights | null>(null);
 
-  // 데이터 로드
+  // 더미 데이터로 초기화
   useEffect(() => {
-    loadSleepData();
-    loadStatistics();
-    loadInsights();
-  }, []);
-
-  useEffect(() => {
-    if (sleepData.length > 0) {
-      loadPrediction();
-    }
-  }, [sleepData]);
-
-  const loadSleepData = async () => {
-    setLoading(prev => ({ ...prev, data: true }));
-    setError(null);
-    
-    try {
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - 7);
-      
-      const records = await getSleepRecords({
+    // 더미 수면 데이터 생성
+    const dummyData: SleepRecord[] = [
+      {
+        id: '1',
         babyId: 1,
-        startDate: startDate.toISOString().split('T')[0],
-        endDate: endDate.toISOString().split('T')[0],
-        limit: 7
-      });
-      
-      setSleepData(records);
-    } catch (err) {
-      setError('수면 데이터를 불러오는데 실패했습니다.');
-      console.error('Sleep data loading error:', err);
-    } finally {
-      setLoading(prev => ({ ...prev, data: false }));
-    }
-  };
+        date: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        bedTime: '20:00',
+        wakeTime: '06:00',
+        sleepHours: 10,
+        sleepQuality: 'good',
+        autoSoothings: 1,
+        nightWakings: 2,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: '2',
+        babyId: 1,
+        date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        bedTime: '19:30',
+        wakeTime: '05:30',
+        sleepHours: 9.5,
+        sleepQuality: 'fair',
+        autoSoothings: 2,
+        nightWakings: 3,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: '3',
+        babyId: 1,
+        date: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        bedTime: '20:30',
+        wakeTime: '06:30',
+        sleepHours: 10,
+        sleepQuality: 'good',
+        autoSoothings: 0,
+        nightWakings: 1,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: '4',
+        babyId: 1,
+        date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        bedTime: '19:00',
+        wakeTime: '05:00',
+        sleepHours: 10,
+        sleepQuality: 'good',
+        autoSoothings: 1,
+        nightWakings: 2,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: '5',
+        babyId: 1,
+        date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        bedTime: '20:00',
+        wakeTime: '06:00',
+        sleepHours: 10,
+        sleepQuality: 'good',
+        autoSoothings: 0,
+        nightWakings: 1,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: '6',
+        babyId: 1,
+        date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        bedTime: '19:30',
+        wakeTime: '05:30',
+        sleepHours: 9.5,
+        sleepQuality: 'fair',
+        autoSoothings: 2,
+        nightWakings: 3,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: '7',
+        babyId: 1,
+        date: new Date().toISOString().split('T')[0],
+        bedTime: '20:00',
+        wakeTime: '06:00',
+        sleepHours: 10,
+        sleepQuality: 'good',
+        autoSoothings: 1,
+        nightWakings: 2,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    ];
 
-  const loadStatistics = async () => {
-    try {
-      const stats = await getSleepStatistics({ babyId: 1, period: 7 });
-      setStatistics(stats);
-    } catch (err) {
-      console.error('Statistics loading error:', err);
-    }
-  };
+    // 더미 통계 데이터
+    const dummyStats: SleepStatistics = {
+      totalRecords: 7,
+      averageSleepHours: 9.9,
+      averageBedTime: '19:45',
+      averageWakeTime: '05:45',
+      sleepQualityDistribution: {
+        good: 5,
+        fair: 2,
+        poor: 0
+      },
+      totalAutoSoothings: 7,
+      averageNightWakings: 2,
+      sleepTrend: 'stable',
+      period: 7
+    };
 
-  const loadPrediction = async () => {
-    setLoading(prev => ({ ...prev, prediction: true }));
-    
-    try {
-      const predictionData = await getSleepPrediction(1);
-      setPrediction(predictionData);
-    } catch (err) {
-      console.error('Prediction loading error:', err);
-    } finally {
-      setLoading(prev => ({ ...prev, prediction: false }));
-    }
-  };
+    // 더미 예측 데이터
+    const dummyPrediction: SleepPrediction = {
+      nextSleepTime: '20:00',
+      sleepDuration: 10,
+      confidence: 85,
+      factors: ['규칙적인 수면 패턴', '적절한 수면 환경', '일정한 취침 시간'],
+      recommendations: ['저녁 7시부터는 조용한 활동만 하기', '수면 전 따뜻한 목욕', '방을 어둡고 조용하게 유지'],
+      analysisDate: new Date().toISOString(),
+      basedOnDays: 7
+    };
 
-  const loadInsights = async () => {
-    setLoading(prev => ({ ...prev, insights: true }));
-    
-    try {
-      const insightsData = await getSleepInsights(1);
-      setInsights(insightsData);
-    } catch (err) {
-      console.error('Insights loading error:', err);
-    } finally {
-      setLoading(prev => ({ ...prev, insights: false }));
-    }
-  };
+    // 더미 인사이트 데이터
+    const dummyInsights: SleepInsights = {
+      insights: ['아이가 평균 9.9시간의 수면을 취하고 있어 적절한 수면량을 유지하고 있습니다.', '대부분의 날 좋은 수면 품질을 보이고 있습니다.'],
+      patterns: ['저녁 7:30-8:00 사이에 취침하는 패턴이 보입니다.', '새벽 5:30-6:00 사이에 기상하는 경향이 있습니다.'],
+      recommendations: ['수면 시간을 더 일정하게 맞추면 더 좋은 수면 품질을 얻을 수 있습니다.', '야간 깨움 횟수를 줄이기 위해 수면 환경을 더욱 최적화해보세요.'],
+      analysisDate: new Date().toISOString(),
+      recordsAnalyzed: 7
+    };
 
-  const refreshData = async () => {
-    await Promise.all([
-      loadSleepData(),
-      loadStatistics(),
-      loadInsights()
-    ]);
-  };
+    setSleepData(dummyData);
+    setStatistics(dummyStats);
+    setPrediction(dummyPrediction);
+    setSleepInsights(dummyInsights);
+  }, []);
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('ko-KR', {
@@ -145,38 +194,14 @@ export default function SleepAnalysis() {
     ? sleepData.reduce((sum, data) => sum + data.sleepHours, 0) / sleepData.length 
     : 0;
 
-  if (error) {
-    return (
-      <div className="mobile-home">
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-6 mb-6">
-          <div className="text-center">
-            <div className="text-red-600 mb-2">⚠️</div>
-            <h3 className="text-lg font-semibold text-red-900 mb-2">데이터 로드 실패</h3>
-            <p className="text-red-700 mb-4">{error}</p>
-            <button 
-              onClick={refreshData}
-              className="bg-red-600 text-white px-4 py-2 rounded-xl hover:bg-red-700 transition-colors"
-            >
-              다시 시도
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="mobile-home">
       {/* 새로고침 버튼 */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-slate-900">수면 분석</h1>
-        <button 
-          onClick={refreshData}
-          disabled={loading.data}
-          className="p-2 bg-blue-100 rounded-xl hover:bg-blue-200 transition-colors disabled:opacity-50"
-        >
-          <RefreshCw className={`w-5 h-5 text-blue-600 ${loading.data ? 'animate-spin' : ''}`} />
-        </button>
+        <div className="p-2 bg-blue-100 rounded-xl">
+          <RefreshCw className="w-5 h-5 text-blue-600" />
+        </div>
       </div>
 
       {/* 날짜 네비게이션 */}
@@ -406,69 +431,64 @@ export default function SleepAnalysis() {
             </div>
           </div>
 
-          {loading.prediction ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+          {/* 수면 예측 내용 */}
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-white/80 rounded-xl p-4">
+                <p className="text-sm text-indigo-700 mb-1">다음 수면 예정</p>
+                <p className="text-xl font-bold text-indigo-900">
+                  {prediction.nextSleepTime}
+                </p>
+              </div>
+              <div className="bg-white/80 rounded-xl p-4">
+                <p className="text-sm text-indigo-700 mb-1">예상 수면시간</p>
+                <p className="text-xl font-bold text-indigo-900">
+                  {prediction.sleepDuration}시간
+                </p>
+              </div>
             </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white/80 rounded-xl p-4">
-                  <p className="text-sm text-indigo-700 mb-1">다음 수면 예정</p>
-                  <p className="text-xl font-bold text-indigo-900">
-                    {prediction.nextSleepTime}
-                  </p>
-                </div>
-                <div className="bg-white/80 rounded-xl p-4">
-                  <p className="text-sm text-indigo-700 mb-1">예상 수면시간</p>
-                  <p className="text-xl font-bold text-indigo-900">
-                    {prediction.sleepDuration}시간
-                  </p>
-                </div>
-              </div>
 
-              <div className="bg-white/80 rounded-xl p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm text-indigo-700">예측 정확도</p>
-                  <span className="text-sm font-semibold text-indigo-900">
-                    {prediction.confidence}%
-                  </span>
-                </div>
-                <div className="w-full bg-indigo-200 rounded-full h-2">
-                  <div 
-                    className="bg-indigo-600 h-2 rounded-full transition-all duration-1000"
-                    style={{ width: `${prediction.confidence}%` }}
-                  ></div>
-                </div>
+            <div className="bg-white/80 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm text-indigo-700">예측 정확도</p>
+                <span className="text-sm font-semibold text-indigo-900">
+                  {prediction.confidence}%
+                </span>
               </div>
+              <div className="w-full bg-indigo-200 rounded-full h-2">
+                <div 
+                  className="bg-indigo-600 h-2 rounded-full transition-all duration-1000"
+                  style={{ width: `${prediction.confidence}%` }}
+                ></div>
+              </div>
+            </div>
 
+            <div className="bg-white/80 rounded-xl p-4">
+              <p className="text-sm text-indigo-700 mb-2">분석 기준</p>
+              <ul className="space-y-1">
+                {prediction.factors.map((factor, index) => (
+                  <li key={index} className="flex items-center gap-2 text-xs text-indigo-800">
+                    <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></div>
+                    {factor}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {prediction.recommendations && prediction.recommendations.length > 0 && (
               <div className="bg-white/80 rounded-xl p-4">
-                <p className="text-sm text-indigo-700 mb-2">분석 기준</p>
+                <p className="text-sm text-indigo-700 mb-2">추천사항</p>
                 <ul className="space-y-1">
-                  {prediction.factors.map((factor, index) => (
+                  {prediction.recommendations.map((recommendation, index) => (
                     <li key={index} className="flex items-center gap-2 text-xs text-indigo-800">
-                      <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></div>
-                      {factor}
+                      <Lightbulb className="w-3 h-3 text-indigo-500" />
+                      {recommendation}
                     </li>
                   ))}
                 </ul>
               </div>
-
-              {prediction.recommendations && prediction.recommendations.length > 0 && (
-                <div className="bg-white/80 rounded-xl p-4">
-                  <p className="text-sm text-indigo-700 mb-2">추천사항</p>
-                  <ul className="space-y-1">
-                    {prediction.recommendations.map((recommendation, index) => (
-                      <li key={index} className="flex items-center gap-2 text-xs text-indigo-800">
-                        <Lightbulb className="w-3 h-3 text-indigo-500" />
-                        {recommendation}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
 
@@ -485,55 +505,50 @@ export default function SleepAnalysis() {
             </div>
           </div>
 
-          {loading.insights ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {insights.insights.length > 0 && (
-                <div className="bg-white/80 rounded-xl p-4">
-                  <p className="text-sm text-green-700 mb-2 font-medium">주요 발견사항</p>
-                  <ul className="space-y-2">
-                    {insights.insights.map((insight, index) => (
-                      <li key={index} className="flex items-start gap-2 text-sm text-green-800">
-                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                        {insight}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+          {/* 수면 인사이트 내용 */}
+          <div className="space-y-4">
+            {insights.insights.length > 0 && (
+              <div className="bg-white/80 rounded-xl p-4">
+                <p className="text-sm text-green-700 mb-2 font-medium">주요 발견사항</p>
+                <ul className="space-y-2">
+                  {insights.insights.map((insight, index) => (
+                    <li key={index} className="flex items-start gap-2 text-sm text-green-800">
+                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                      {insight}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
-              {insights.patterns.length > 0 && (
-                <div className="bg-white/80 rounded-xl p-4">
-                  <p className="text-sm text-green-700 mb-2 font-medium">수면 패턴</p>
-                  <ul className="space-y-1">
-                    {insights.patterns.map((pattern, index) => (
-                      <li key={index} className="flex items-center gap-2 text-xs text-green-800">
-                        <TrendingUp className="w-3 h-3 text-green-500" />
-                        {pattern}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+            {insights.patterns.length > 0 && (
+              <div className="bg-white/80 rounded-xl p-4">
+                <p className="text-sm text-green-700 mb-2 font-medium">수면 패턴</p>
+                <ul className="space-y-1">
+                  {insights.patterns.map((pattern, index) => (
+                    <li key={index} className="flex items-center gap-2 text-xs text-green-800">
+                      <TrendingUp className="w-3 h-3 text-green-500" />
+                      {pattern}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
-              {insights.recommendations.length > 0 && (
-                <div className="bg-white/80 rounded-xl p-4">
-                  <p className="text-sm text-green-700 mb-2 font-medium">개선 제안</p>
-                  <ul className="space-y-2">
-                    {insights.recommendations.map((recommendation, index) => (
-                      <li key={index} className="flex items-start gap-2 text-sm text-green-800">
-                        <Lightbulb className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                        {recommendation}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
+            {insights.recommendations.length > 0 && (
+              <div className="bg-white/80 rounded-xl p-4">
+                <p className="text-sm text-green-700 mb-2 font-medium">개선 제안</p>
+                <ul className="space-y-2">
+                  {insights.recommendations.map((recommendation, index) => (
+                    <li key={index} className="flex items-start gap-2 text-sm text-green-800">
+                      <Lightbulb className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                      {recommendation}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -549,73 +564,69 @@ export default function SleepAnalysis() {
           </div>
         </div>
 
-        {loading.data ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-slate-400"></div>
-          </div>
-        ) : sleepData.length === 0 ? (
-          <div className="text-center py-8 text-slate-500">
-            <Moon className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p>수면 데이터가 없습니다.</p>
-            <p className="text-sm">수면 기록을 추가해보세요.</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {sleepData.map((data) => {
-              const date = new Date(data.date);
-              const isToday = date.toDateString() === new Date().toDateString();
-              
-              return (
-                <div key={data.date} className={`p-3 rounded-xl border-2 transition-all ${
-                  isToday ? 'border-amber-300 bg-amber-50' : 'border-slate-100 bg-slate-50'
-                }`}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="text-center min-w-[60px]">
-                        <p className="text-xs text-slate-600">
-                          {date.toLocaleDateString('ko-KR', { weekday: 'short' })}
-                        </p>
-                        <p className="text-sm font-semibold text-slate-900">
-                          {date.getMonth() + 1}/{date.getDate()}
-                        </p>
-                      </div>
-                      
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Clock className="w-4 h-4 text-slate-500" />
-                          <span className="text-sm font-medium text-slate-900">
-                            {data.sleepHours.toFixed(1)}h
-                          </span>
-                          <span className={`text-xs px-2 py-1 rounded-full ${getSleepQualityColor(data.sleepQuality)}`}>
-                            {getSleepQualityText(data.sleepQuality)}
-                          </span>
-                        </div>
-                        
-                        <div className="text-xs text-slate-600">
-                          {formatTime(data.bedTime)} - {formatTime(data.wakeTime)}
-                          {data.autoSoothings > 0 && (
-                            <span className="ml-2">• 자동진정 {data.autoSoothings}회</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="w-16 bg-slate-200 rounded-full h-2">
-                      <div 
-                        className={`h-2 rounded-full ${
-                          data.sleepQuality === 'good' ? 'bg-green-500' :
-                          data.sleepQuality === 'fair' ? 'bg-yellow-500' :
-                          'bg-red-500'
-                        }`}
-                        style={{ width: `${Math.min(100, (data.sleepHours / 14) * 100)}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+                 {sleepData.length === 0 ? (
+           <div className="text-center py-8 text-slate-500">
+             <Moon className="w-12 h-12 mx-auto mb-3 opacity-50" />
+             <p>수면 데이터가 없습니다.</p>
+             <p className="text-sm">수면 기록을 추가해보세요.</p>
+           </div>
+         ) : (
+           <div className="space-y-3">
+             {sleepData.map((data) => {
+               const date = new Date(data.date);
+               const isToday = date.toDateString() === new Date().toDateString();
+               
+               return (
+                 <div key={data.date} className={`p-3 rounded-xl border-2 transition-all ${
+                   isToday ? 'border-amber-300 bg-amber-50' : 'border-slate-100 bg-slate-50'
+                 }`}>
+                   <div className="flex items-center justify-between">
+                     <div className="flex items-center gap-3">
+                       <div className="text-center min-w-[60px]">
+                         <p className="text-xs text-slate-600">
+                           {date.toLocaleDateString('ko-KR', { weekday: 'short' })}
+                         </p>
+                         <p className="text-sm font-semibold text-slate-900">
+                           {date.getMonth() + 1}/{date.getDate()}
+                         </p>
+                       </div>
+                       
+                       <div className="flex-1">
+                         <div className="flex items-center gap-2 mb-1">
+                           <Clock className="w-4 h-4 text-slate-500" />
+                           <span className="text-sm font-medium text-slate-900">
+                             {data.sleepHours.toFixed(1)}h
+                           </span>
+                           <span className={`text-xs px-2 py-1 rounded-full ${getSleepQualityColor(data.sleepQuality)}`}>
+                             {getSleepQualityText(data.sleepQuality)}
+                           </span>
+                         </div>
+                         
+                         <div className="text-xs text-slate-600">
+                           {formatTime(data.bedTime)} - {formatTime(data.wakeTime)}
+                           {data.autoSoothings > 0 && (
+                             <span className="ml-2">• 자동진정 {data.autoSoothings}회</span>
+                           )}
+                         </div>
+                       </div>
+                     </div>
+                     
+                     <div className="w-16 bg-slate-200 rounded-full h-2">
+                       <div 
+                         className={`h-2 rounded-full ${
+                           data.sleepQuality === 'good' ? 'bg-green-500' :
+                           data.sleepQuality === 'fair' ? 'bg-yellow-500' :
+                           'bg-red-500'
+                         }`}
+                         style={{ width: `${Math.min(100, (data.sleepHours / 14) * 100)}%` }}
+                       ></div>
+                     </div>
+                   </div>
+                 </div>
+               );
+             })}
+           </div>
+         )}
       </div>
 
       {/* 통계 요약 (화면 하단) */}
