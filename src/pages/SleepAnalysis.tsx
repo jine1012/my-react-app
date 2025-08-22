@@ -7,8 +7,7 @@ import {
   formatTime,
   type SleepRecord,
   type SleepStatistics,
-  type SleepPrediction,
-  type SleepInsights
+  type SleepPrediction
 } from '../services/sleepService';
 
 export default function SleepAnalysis() {
@@ -16,7 +15,7 @@ export default function SleepAnalysis() {
   const [sleepData, setSleepData] = useState<SleepRecord[]>([]);
   const [statistics, setStatistics] = useState<SleepStatistics | null>(null);
   const [prediction, setPrediction] = useState<SleepPrediction | null>(null);
-  const [insights, setSleepInsights] = useState<SleepInsights | null>(null);
+
 
   // 더미 데이터로 초기화
   useEffect(() => {
@@ -143,19 +142,9 @@ export default function SleepAnalysis() {
       basedOnDays: 7
     };
 
-    // 더미 인사이트 데이터
-    const dummyInsights: SleepInsights = {
-      insights: ['아이가 평균 9.9시간의 수면을 취하고 있어 적절한 수면량을 유지하고 있습니다.', '대부분의 날 좋은 수면 품질을 보이고 있습니다.'],
-      patterns: ['저녁 7:30-8:00 사이에 취침하는 패턴이 보입니다.', '새벽 5:30-6:00 사이에 기상하는 경향이 있습니다.'],
-      recommendations: ['수면 시간을 더 일정하게 맞추면 더 좋은 수면 품질을 얻을 수 있습니다.', '야간 깨움 횟수를 줄이기 위해 수면 환경을 더욱 최적화해보세요.'],
-      analysisDate: new Date().toISOString(),
-      recordsAnalyzed: 7
-    };
-
-    setSleepData(dummyData);
-    setStatistics(dummyStats);
-    setPrediction(dummyPrediction);
-    setSleepInsights(dummyInsights);
+         setSleepData(dummyData);
+     setStatistics(dummyStats);
+     setPrediction(dummyPrediction);
   }, []);
 
   const formatDate = (date: Date) => {
@@ -492,65 +481,7 @@ export default function SleepAnalysis() {
         </div>
       )}
 
-      {/* 수면 인사이트 */}
-      {insights && (
-        <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-200/60 p-6 mb-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-3 bg-green-500 rounded-xl">
-              <Lightbulb className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-green-900">수면 인사이트</h3>
-              <p className="text-sm text-green-700">{insights.recordsAnalyzed}일간 데이터 분석</p>
-            </div>
-          </div>
-
-          {/* 수면 인사이트 내용 */}
-          <div className="space-y-4">
-            {insights.insights.length > 0 && (
-              <div className="bg-white/80 rounded-xl p-4">
-                <p className="text-sm text-green-700 mb-2 font-medium">주요 발견사항</p>
-                <ul className="space-y-2">
-                  {insights.insights.map((insight, index) => (
-                    <li key={index} className="flex items-start gap-2 text-sm text-green-800">
-                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                      {insight}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {insights.patterns.length > 0 && (
-              <div className="bg-white/80 rounded-xl p-4">
-                <p className="text-sm text-green-700 mb-2 font-medium">수면 패턴</p>
-                <ul className="space-y-1">
-                  {insights.patterns.map((pattern, index) => (
-                    <li key={index} className="flex items-center gap-2 text-xs text-green-800">
-                      <TrendingUp className="w-3 h-3 text-green-500" />
-                      {pattern}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {insights.recommendations.length > 0 && (
-              <div className="bg-white/80 rounded-xl p-4">
-                <p className="text-sm text-green-700 mb-2 font-medium">개선 제안</p>
-                <ul className="space-y-2">
-                  {insights.recommendations.map((recommendation, index) => (
-                    <li key={index} className="flex items-start gap-2 text-sm text-green-800">
-                      <Lightbulb className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                      {recommendation}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      
 
       {/* 주간 수면 트렌드 */}
       <div className="bg-white rounded-2xl border border-slate-200/60 p-6 shadow-sm">
