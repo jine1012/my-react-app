@@ -17,13 +17,6 @@ import {
 
 // RAG 챗봇은 기존 GlobalChatbot에 통합됨
 
-interface LogEntry {
-  id: number;
-  ts: string;
-  type: string;
-  msg: string;
-}
-
 interface SensorData {
   roomTemperature: number;
   humidity: number;
@@ -40,11 +33,6 @@ interface BabyInfo {
 }
 
 export default function Home() {
-  const [logs] = useState<LogEntry[]>(() => {
-    const stored = localStorage.getItem("baby-logs");
-    return stored ? JSON.parse(stored) : [];
-  });
-
   const [sensorData, setSensorData] = useState<SensorData>({
     roomTemperature: 23.2,
     humidity: 48,
@@ -59,8 +47,6 @@ export default function Home() {
     ageInMonths: 8,     // 실제 개월 수로 변경 가능
     weight: 8.5         // 실제 체중으로 변경 가능
   });
-
-  const last = logs.length > 0 ? logs[logs.length - 1] : null;
 
   // 젯슨나노 연결 상태 및 센서 데이터 실시간 업데이트
   useEffect(() => {
@@ -84,7 +70,7 @@ export default function Home() {
       } catch (error) {
         console.error('센서 데이터 가져오기 실패:', error);
         // 연결 실패 시 시뮬레이션 데이터
-        setSensorData(prev => ({
+        setSensorData(() => ({
           roomTemperature: parseFloat((20 + Math.random() * 6).toFixed(1)),
           humidity: Math.floor(40 + Math.random() * 30),
           babyTemperature: parseFloat((36.0 + Math.random() * 2.5).toFixed(1)),
@@ -215,7 +201,7 @@ export default function Home() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className={`w-3 h-3 rounded-full ${sensorData.jetsonConnected ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
-            <h3 className="font-semibold text-stone-800">젯슨나노 상태</h3>
+            <h3 className="font-semibold text-stone-800">연결 상태</h3>
           </div>
           <div className="flex items-center gap-2">
             {sensorData.jetsonConnected ? (
@@ -244,30 +230,6 @@ export default function Home() {
             </p>
           </div>
         )}
-      </div>
-
-      {/* 상태 요약 카드 */}
-      <div className="bg-white rounded-2xl shadow-sm border border-amber-200/50 p-5 mb-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse shadow-sm"></div>
-          <h3 className="font-semibold text-stone-800">상태 요약</h3>
-        </div>
-        <div>
-          {last ? (
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-2 bg-amber-400 rounded-full"></div>
-              <span className="text-sm text-stone-600">
-                마지막 이벤트 · {new Date(last.ts).toLocaleTimeString()} ·{" "}
-                <span className="font-medium text-stone-800">{last.type}</span> · {last.msg}
-              </span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3 text-amber-600/70">
-              <Sparkles className="w-5 h-5" />
-              <span className="text-sm">최근 이벤트가 없습니다.</span>
-            </div>
-          )}
-        </div>
       </div>
 
       {/* 환경 정보 카드들 - 기존 2개 + 아기 체온 추가 */}

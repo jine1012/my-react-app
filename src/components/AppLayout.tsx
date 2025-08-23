@@ -1,11 +1,13 @@
 // src/components/AppLayout.tsx
 import '../App.css';
 import { NavLink, Outlet } from 'react-router-dom';
-import { Home, Camera, Moon, List, NotebookText, Brain, Menu, Bell, Heart } from 'lucide-react';
+import { Home, Camera, Moon, List, BarChart3, Menu, Bell, Heart } from 'lucide-react';
 import ScrollToTop from './ScrollToTop';
 import ProfileBar from './ProfileBar';
 
-type AppLayoutProps = { children?: React.ReactNode };
+type AppLayoutProps = { 
+  children?: React.ReactNode; 
+};
 
 export default function AppLayout({ children }: AppLayoutProps) {
   return (
@@ -43,7 +45,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         {children ?? <Outlet />}
       </main>
 
-      {/* 하단 탭바 - 5개 탭으로 업데이트 */}
+      {/* 하단 탭바 - 홈-실시간-수면-로그-분석 */}
       <nav className="bottom-tabbar">
         <NavLink to="/" end className="tab-item">
           {({ isActive }) => (
@@ -81,11 +83,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
           )}
         </NavLink>
         
-        <NavLink to="/diary" className="tab-item">
+        <NavLink to="/analysis" className="tab-item">
           {({ isActive }) => (
             <div className={`tab-content ${isActive ? 'active' : ''}`}>
-              <NotebookText size={20} />
-              <span>일기</span>
+              <BarChart3 size={20} />
+              <span>분석</span>
             </div>
           )}
         </NavLink>

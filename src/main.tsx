@@ -6,7 +6,7 @@ import App from './App';
 import Home from './pages/Home';
 import Live from './pages/Live';
 import Logs from './pages/Logs';
-import Diary from './pages/Diary';
+
 import CryAnalysis from './pages/CryAnalysis';
 import SleepAnalysis from './pages/SleepAnalysis'; 
 import './index.css';
@@ -20,8 +20,8 @@ const router = createBrowserRouter([
       { path: 'live', element: <Live /> },
       { path: 'sleep', element: <SleepAnalysis /> }, 
       { path: 'logs', element: <Logs /> },
-      { path: 'diary', element: <Diary /> },
-      { path: 'analysis', element: <CryAnalysis /> },
+      { path: 'analysis', element: <CryAnalysis /> }, // 경로 변경: /diary → /analysis
+      // { path: 'diary', element: <Diary /> }, // 필요시 주석 해제
       { path: '*', element: <div style={{ padding: 16 }}>Not Found</div> },
     ],
   },

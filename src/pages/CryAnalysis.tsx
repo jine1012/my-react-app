@@ -8,10 +8,10 @@ import {
   TrendingUp,
   Settings,
   MoreVertical,
-
+  Volume2
 } from "lucide-react";
 
-type CryReason = "sleepy" | "hungry" | "wet" | "hot" | "cold" | "attention" | "unknown";
+type CryReason = "belly_pain" | "burp" | "discomfort" | "hungry" | "tired" | "cold" | "hot";
 
 interface AnalysisResult {
   reasons: { reason: CryReason; confidence: number }[];
@@ -33,6 +33,7 @@ export default function CryAnalysis() {
   const [isListening, setIsListening] = useState(false);
   const [currentAnalysis, setCurrentAnalysis] = useState<AnalysisResult | null>(null);
   const [recentAnalyses, setRecentAnalyses] = useState<AnalysisResult[]>([]);
+  const [autoAnalysisEnabled, setAutoAnalysisEnabled] = useState(false); // 자동분석 상태 추가
   const [devices, setDevices] = useState<SmartDevice[]>([
     { id: "bed", name: "스마트 침대", type: "bed", status: "off", icon: <Bed className="w-5 h-5" />, action: "흔들기" },
     { id: "humidifier", name: "가습기", type: "humidifier", status: "off", icon: <Droplets className="w-5 h-5" />, action: "켜기" },
@@ -43,9 +44,9 @@ export default function CryAnalysis() {
     const mockAnalyses = [
       { 
         reasons: [
-          { reason: "sleepy" as CryReason, confidence: 67 },
+          { reason: "tired" as CryReason, confidence: 67 },
           { reason: "hungry" as CryReason, confidence: 23 },
-          { reason: "wet" as CryReason, confidence: 8 },
+          { reason: "discomfort" as CryReason, confidence: 8 },
           { reason: "cold" as CryReason, confidence: 2 }
         ], 
         timestamp: new Date(Date.now() - 300000), 
@@ -55,8 +56,8 @@ export default function CryAnalysis() {
       { 
         reasons: [
           { reason: "hungry" as CryReason, confidence: 82 },
-          { reason: "sleepy" as CryReason, confidence: 15 },
-          { reason: "attention" as CryReason, confidence: 3 }
+          { reason: "belly_pain" as CryReason, confidence: 15 },
+          { reason: "burp" as CryReason, confidence: 3 }
         ], 
         timestamp: new Date(Date.now() - 1800000), 
         duration: 120, 
@@ -64,9 +65,9 @@ export default function CryAnalysis() {
       },
       { 
         reasons: [
-          { reason: "wet" as CryReason, confidence: 78 },
-          { reason: "attention" as CryReason, confidence: 15 },
-          { reason: "sleepy" as CryReason, confidence: 7 }
+          { reason: "belly_pain" as CryReason, confidence: 78 },
+          { reason: "discomfort" as CryReason, confidence: 15 },
+          { reason: "hot" as CryReason, confidence: 7 }
         ], 
         timestamp: new Date(Date.now() - 3600000), 
         duration: 30, 
@@ -78,31 +79,35 @@ export default function CryAnalysis() {
   }, []);
 
   const getCryReasonInfo = (reason: CryReason) => {
-    const reasons = {
-      sleepy: { label: "졸림", emoji: "😴", color: "purple", description: "아기가 잠들고 싶어해요" },
-      hungry: { label: "배고픔", emoji: "🍼", color: "orange", description: "수유 시간이 될 것 같아요" },
-      wet: { label: "기저귀", emoji: "💧", color: "blue", description: "기저귀를 확인해보세요" },
-      hot: { label: "더움", emoji: "🌡️", color: "red", description: "온도가 높은 것 같아요" },
-      cold: { label: "추움", emoji: "❄️", color: "cyan", description: "온도가 낮은 것 같아요" },
-      attention: { label: "관심", emoji: "😢", color: "pink", description: "관심과 사랑이 필요해요" },
-      unknown: { label: "알 수 없음", emoji: "❓", color: "gray", description: "분석 중입니다" }
+    const reasons: Record<CryReason, { label: string; emoji: string; color: string; description: string }> = {
+      belly_pain: { label: "배앓이", emoji: "😣", color: "red", description: "배가 아픈 것 같아요" },
+      burp: { label: "트림", emoji: "😮", color: "blue", description: "트림이 필요해요" },
+      discomfort: { label: "불편함", emoji: "😤", color: "orange", description: "뭔가 불편한 상태예요" },
+      hungry: { label: "배고픔", emoji: "🍼", color: "green", description: "수유 시간이 될 것 같아요" },
+      tired: { label: "피곤함", emoji: "😴", color: "purple", description: "잠들고 싶어해요" },
+      cold: { label: "추움", emoji: "🥶", color: "cyan", description: "춥다고 느끼는 것 같아요" },
+      hot: { label: "더움", emoji: "🥵", color: "pink", description: "덥다고 느끼는 것 같아요" }
     };
     return reasons[reason];
   };
 
-  const getRecommendedActions = (reasons: { reason: CryReason; confidence: number }[]) => {
-    const topReason = reasons[0]?.reason;
-    const actions = {
-      sleepy: ["bed"],
-      hungry: [],
-      wet: ["humidifier"], // 습도 조절로 쾌적함 제공
-      hot: [],
-      cold: [],
-      attention: [],
-      unknown: []
+    const getRecommendedActions = (reasons: { reason: CryReason; confidence: number }[]) => {
+    const topReason: CryReason | undefined = reasons[0]?.reason;
+
+    // CryReason 전부를 키로 갖는 매핑
+    const actions: Record<CryReason, string[]> = {
+      belly_pain: ["bed"],        // 배앓이 → 스마트 침대
+      burp: ["bed"],              // 트림 → 침대 흔들기
+      discomfort: ["bed"],        // 불편함 → 침대
+      hungry: ["bed"],            // 배고픔 → (예: 수유 알림, 기기는 임시로 bed로 연결)
+      tired: ["bed"],             // 피곤함 → 침대
+      cold: ["humidifier"],       // 추움 → 가습기 (습도 올리기)
+      hot: ["humidifier"],        // 더움 → 가습기 OFF 등
     };
-    return actions[topReason] || [];
+
+    return topReason ? actions[topReason] : [];
   };
+
 
   const toggleDevice = (deviceId: string) => {
     setDevices(prev => prev.map(device => 
@@ -114,14 +119,13 @@ export default function CryAnalysis() {
 
   const startListening = () => {
     setIsListening(true);
-    // Mock analysis after 3 seconds
     setTimeout(() => {
         const mockResult: AnalysisResult = {
             reasons: [
-                { reason: "sleepy" as CryReason, confidence: Math.floor(Math.random() * 30) + 50 },
+                { reason: "belly_pain" as CryReason, confidence: Math.floor(Math.random() * 30) + 50 },
                 { reason: "hungry" as CryReason, confidence: Math.floor(Math.random() * 20) + 15 },
-                { reason: "wet" as CryReason, confidence: Math.floor(Math.random() * 15) + 5 },
-                { reason: "cold" as CryReason, confidence: Math.floor(Math.random() * 10) + 2 },
+                { reason: "discomfort" as CryReason, confidence: Math.floor(Math.random() * 15) + 5 },
+                { reason: "tired" as CryReason, confidence: Math.floor(Math.random() * 10) + 2 },
             ].sort((a, b) => b.confidence - a.confidence),
             timestamp: new Date(),
             duration: Math.floor(Math.random() * 60) + 20,
@@ -131,7 +135,27 @@ export default function CryAnalysis() {
         setRecentAnalyses(prev => [mockResult, ...prev.slice(0, 4)]);
         setIsListening(false);
     }, 3000);
-    };
+  };
+
+  
+  // 자동 울음 분석 토글
+  const toggleAutoAnalysis = async () => {
+    try {
+      const response = await fetch('/api/cry-detection/auto-analysis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: !autoAnalysisEnabled })
+      });
+      
+      if (response.ok) {
+        setAutoAnalysisEnabled(!autoAnalysisEnabled);
+      }
+    } catch (error) {
+      console.error('자동 분석 토글 실패:', error);
+      // 서버 연결 실패 시에도 UI 상태 변경 (개발용)
+      setAutoAnalysisEnabled(!autoAnalysisEnabled);
+    }
+  };
 
   const topReason = currentAnalysis?.reasons[0];
   const currentReason = topReason ? getCryReasonInfo(topReason.reason) : null;
@@ -149,6 +173,44 @@ export default function CryAnalysis() {
           <button className="p-2 hover:bg-white/50 rounded-xl transition-colors">
             <MoreVertical className="w-5 h-5 text-slate-600" />
           </button>
+        </div>
+
+        {/* 🔥 자동울음분석 ON/OFF 스위치 */}
+        <div className="bg-white rounded-2xl border border-slate-200/60 p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className={`p-3 rounded-xl ${autoAnalysisEnabled ? 'bg-green-100' : 'bg-slate-100'}`}>
+                {autoAnalysisEnabled ? <Volume2 className="w-6 h-6 text-green-600" /> : <Mic className="w-6 h-6 text-slate-600" />}
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold text-slate-900">자동 울음 분석</h3>
+                <p className="text-sm text-slate-600">
+                  {autoAnalysisEnabled ? '울음 소리를 실시간으로 감지하고 분석합니다' : '수동으로 분석을 시작할 수 있습니다'}
+                </p>
+              </div>
+            </div>
+            
+            <button
+              onClick={toggleAutoAnalysis}
+              className={`relative w-16 h-8 rounded-full transition-all duration-300 ${
+                autoAnalysisEnabled ? 'bg-green-500' : 'bg-slate-300'
+              }`}
+            >
+              <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-transform duration-300 ${
+                autoAnalysisEnabled ? 'translate-x-9' : 'translate-x-1'
+              }`}>
+              </div>
+            </button>
+          </div>
+          
+          {autoAnalysisEnabled && (
+            <div className="mt-4 p-3 bg-green-50 rounded-xl border border-green-200">
+              <div className="flex items-center gap-2 text-green-700">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium">자동 분석 활성화됨 - 울음 소리를 감지 중입니다</span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 실시간 분석 카드 */}
