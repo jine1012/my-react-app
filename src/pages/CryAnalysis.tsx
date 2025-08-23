@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useJetsonService } from '../services/jetsonService';
 import { 
   Mic, 
   Brain, 
@@ -38,6 +39,61 @@ export default function CryAnalysis() {
     { id: "bed", name: "스마트 침대", type: "bed", status: "off", icon: <Bed className="w-5 h-5" />, action: "흔들기" },
     { id: "humidifier", name: "가습기", type: "humidifier", status: "off", icon: <Droplets className="w-5 h-5" />, action: "켜기" },
   ]);
+   // 🔥 젯슨 서비스 연동 추가
+  const { jetsonService, audioStatus } = useJetsonService();
+
+
+  // 🔥 자동 울음 분석 연동
+  const toggleAutoAnalysis = async () => {
+    try {
+      if (autoAnalysisEnabled) {
+        await jetsonService.stopAudioMonitoring();
+      } else {
+        await jetsonService.startAudioMonitoring();
+      }
+      setAutoAnalysisEnabled(!autoAnalysisEnabled);
+    } catch (error) {
+      console.error('자동 분석 토글 실패:', error);
+      // 기존 UI 업데이트는 유지
+      setAutoAnalysisEnabled(!autoAnalysisEnabled);
+    }
+  };
+
+  // 🔥 울음 분석 결과 실시간 업데이트
+  useEffect(() => {
+    if (audioStatus?.lastClassification) {
+      const result: AnalysisResult = {
+        reasons: [
+          { reason: audioStatus.lastClassification as CryReason, confidence: 85 }
+        ],
+        timestamp: new Date(),
+        duration: 60,
+        intensity: 7
+      };
+      setCurrentAnalysis(result);
+      setRecentAnalyses(prev => [result, ...prev.slice(0, 4)]);
+    }
+  }, [audioStatus?.lastClassification]);
+
+  // 🔥 스마트 기기 제어 연동
+  const toggleDevice = async (deviceId: string) => {
+    try {
+      if (deviceId === "bed") {
+        await jetsonService.controlActuator('toggle', 30);
+      } else if (deviceId === "humidifier") {
+        await jetsonService.controlHumidifier('toggle');
+      }
+      // 기존 UI 업데이트 로직 유지
+      setDevices(prev => prev.map(device => 
+        device.id === deviceId 
+          ? { ...device, status: device.status === "on" ? "off" : "on" }
+          : device
+      ));
+    } catch (error) {
+      console.error('기기 제어 오류:', error);
+    }
+  };
+
 
   // Mock analysis data
   useEffect(() => {
@@ -108,15 +164,6 @@ export default function CryAnalysis() {
     return topReason ? actions[topReason] : [];
   };
 
-
-  const toggleDevice = (deviceId: string) => {
-    setDevices(prev => prev.map(device => 
-      device.id === deviceId 
-        ? { ...device, status: device.status === "on" ? "off" : "on" }
-        : device
-    ));
-  };
-
   const startListening = () => {
     setIsListening(true);
     setTimeout(() => {
@@ -138,25 +185,6 @@ export default function CryAnalysis() {
   };
 
   
-  // 자동 울음 분석 토글
-  const toggleAutoAnalysis = async () => {
-    try {
-      const response = await fetch('/api/cry-detection/auto-analysis', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enabled: !autoAnalysisEnabled })
-      });
-      
-      if (response.ok) {
-        setAutoAnalysisEnabled(!autoAnalysisEnabled);
-      }
-    } catch (error) {
-      console.error('자동 분석 토글 실패:', error);
-      // 서버 연결 실패 시에도 UI 상태 변경 (개발용)
-      setAutoAnalysisEnabled(!autoAnalysisEnabled);
-    }
-  };
-
   const topReason = currentAnalysis?.reasons[0];
   const currentReason = topReason ? getCryReasonInfo(topReason.reason) : null;
   const recommendedActions = currentAnalysis ? getRecommendedActions(currentAnalysis.reasons) : [];

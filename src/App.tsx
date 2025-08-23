@@ -1,18 +1,13 @@
 // src/App.tsx
-import { Outlet } from 'react-router-dom';
 import AppLayout from './components/AppLayout';
-import GlobalChatbot from './components/GlobalChatbot';
-import Splash from "./components/Splash";
-import "./App.css";
+import { Outlet } from 'react-router-dom';
 
-
-
-export default function App() {
+function App() {
   return (
     <AppLayout>
-      <Splash />
-      <Outlet />
-      <GlobalChatbot /> {/* ← 전역 플로팅 챗봇 */}
+      <Outlet />   {/* RouterProvider에서 children이 들어올 자리 */}
     </AppLayout>
   );
 }
+
+export default App;

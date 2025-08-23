@@ -1,400 +1,250 @@
-// src/pages/Live.tsx
-import { useState, useEffect } from "react";
+// src/pages/Realtime.tsx - 젯슨 나노 연동 업데이트
+import React, { useState, useEffect } from 'react';
 import { 
   Camera, 
-  Video, 
-  ShieldCheck, 
-  ShieldAlert,
   Thermometer, 
   Droplets, 
-  User,
-  Moon,
-  Sun,
-  Eye,
-  EyeOff,
+  Moon, 
   Wifi,
-  WifiOff
-} from "lucide-react";
+  WifiOff,
+  AlertTriangle,
+  Eye
+} from 'lucide-react';
+import { useJetsonService } from '../services/jetsonService';
 
-interface SensorData {
-  temperature: number;
-  humidity: number;
-  babyTemp: number;
+// VideoStream 컴포넌트
+interface VideoStreamProps {
+  streamUrl: string;
+  isActive: boolean;
+  onToggle: () => void;
+  title: string;
 }
 
-interface DangerDetection {
-  status: 'safe' | 'danger';
-  confidence: number;
-  timestamp: Date;
-  type?: 'suffocation' | 'position' | 'breathing';
-}
-
-export default function Live() {
-  // 수면 모드 상태
-  const [sleepMode, setSleepMode] = useState(false);
-  const [sleepModeLoading, setSleepModeLoading] = useState(false);
-  
-  // 카메라 상태
-  const [cameraActive, setCameraActive] = useState(false);
-  const [cameraLoading, setCameraLoading] = useState(false);
-  
-  // 위험 감지 상태
-  const [dangerStatus, setDangerStatus] = useState<DangerDetection>({
-    status: 'safe',
-    confidence: 95,
-    timestamp: new Date(),
-  });
-  
-  // 센서 데이터
-  const [sensorData, setSensorData] = useState<SensorData>({
-    temperature: 22.5,
-    humidity: 45,
-    babyTemp: 36.8
-  });
-  
-  // 연결 상태
-  const [jetsonConnected, setJetsonConnected] = useState(false);
-
-  // 🔄 수면 모드 토글
-  const toggleSleepMode = async () => {
-    setSleepModeLoading(true);
-    
-    try {
-      // 젯슨에 수면모드 요청 (현재는 Mock)
-      const response = await fetch('/api/jetson/sleep-mode', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enabled: !sleepMode })
-      });
-      
-      if (response.ok) {
-        setSleepMode(!sleepMode);
-        // 수면모드 ON이면 카메라도 자동 켜기
-        if (!sleepMode) {
-          setCameraActive(true);
-        }
-      }
-    } catch (error) {
-      console.error('수면모드 토글 실패:', error);
-      // 서버 연결 실패 시에도 일단 UI 상태는 변경 (개발용)
-      setSleepMode(!sleepMode);
-      if (!sleepMode) {
-        setCameraActive(true);
-      }
-    } finally {
-      setSleepModeLoading(false);
-    }
-  };
-
-  // 📹 카메라 토글
-  const toggleCamera = async () => {
-    setCameraLoading(true);
-    
-    try {
-      const response = await fetch('/api/jetson/camera/toggle', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enabled: !cameraActive })
-      });
-      
-      if (response.ok) {
-        setCameraActive(!cameraActive);
-      }
-    } catch (error) {
-      console.error('카메라 토글 실패:', error);
-      // 서버 연결 실패 시에도 UI 상태 변경 (개발용)
-      setCameraActive(!cameraActive);
-    } finally {
-      setCameraLoading(false);
-    }
-  };
-
-  // 🔍 젯슨 연결 상태 체크
-  useEffect(() => {
-    const checkConnection = async () => {
-      try {
-        const response = await fetch('/api/jetson/status');
-        setJetsonConnected(response.ok);
-      } catch {
-        setJetsonConnected(false);
-      }
-    };
-
-    checkConnection();
-    const interval = setInterval(checkConnection, 10000); // 10초마다 체크
-    
-    return () => clearInterval(interval);
-  }, []);
-
-  // 📊 센서 데이터 업데이트
-  useEffect(() => {
-    const updateSensorData = async () => {
-      try {
-        const response = await fetch('/api/jetson/sensors');
-        if (response.ok) {
-          const data = await response.json();
-          setSensorData(data);
-        }
-      } catch (error) {
-        console.error('센서 데이터 업데이트 실패:', error);
-        // Mock 데이터로 시뮬레이션
-        setSensorData({
-          temperature: 22 + Math.random() * 4, // 22-26도
-          humidity: 40 + Math.random() * 20,   // 40-60%
-          babyTemp: 36.2 + Math.random() * 1.2 // 36.2-37.4도
-        });
-      }
-    };
-
-    // 실시간 센서 데이터 업데이트 (5초마다)
-    const sensorInterval = setInterval(updateSensorData, 5000);
-    updateSensorData(); // 초기 데이터 로드
-
-    return () => clearInterval(sensorInterval);
-  }, []);
-
-  // 🛡️ 위험 감지 시뮬레이션 (실제로는 젯슨에서 받아올 데이터)
-  useEffect(() => {
-    const simulateDangerDetection = () => {
-      // 위험도를 랜덤하게 시뮬레이션 (실제로는 젯슨 AI 모델 결과)
-      const randomRisk = Math.random();
-      const newStatus: DangerDetection = {
-        status: randomRisk > 0.85 ? 'danger' : 'safe', // 15% 확률로 위험
-        confidence: Math.floor(85 + Math.random() * 15), // 85-100%
-        timestamp: new Date(),
-        type: randomRisk > 0.95 ? 'suffocation' : randomRisk > 0.9 ? 'position' : undefined
-      };
-      
-      setDangerStatus(newStatus);
-    };
-
-    if (sleepMode && cameraActive) {
-      const interval = setInterval(simulateDangerDetection, 3000); // 3초마다 체크
-      return () => clearInterval(interval);
-    }
-  }, [sleepMode, cameraActive]);
+const VideoStream: React.FC<VideoStreamProps> = ({ streamUrl, isActive, onToggle, title }) => {
+  const [streamError, setStreamError] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50/30 via-orange-50/20 to-yellow-50/30">
+    <div className="bg-black rounded-xl overflow-hidden relative">
+      <div className="aspect-video bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center">
+        {isActive && !streamError ? (
+          <img 
+            src={streamUrl}
+            alt={title}
+            className="w-full h-full object-cover"
+            onError={() => setStreamError(true)}
+            onLoad={() => setStreamError(false)}
+          />
+        ) : (
+          <div className="text-center text-slate-400">
+            <Camera className="w-12 h-12 mx-auto mb-2 opacity-50" />
+            <p className="text-sm">{streamError ? '연결 오류' : '카메라 꺼짐'}</p>
+          </div>
+        )}
+      </div>
+      
+      <div className="absolute top-3 left-3">
+        <span className="bg-black/50 text-white px-2 py-1 rounded text-xs">
+          {title}
+        </span>
+      </div>
+      
+      <button
+        onClick={onToggle}
+        className={`absolute bottom-3 right-3 p-2 rounded-full ${
+          isActive ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'
+        } text-white transition-colors`}
+      >
+        <Eye className="w-4 h-4" />
+      </button>
+      
+      {isActive && (
+        <div className="absolute top-3 right-3 flex items-center gap-1 bg-red-500/80 text-white px-2 py-1 rounded-full text-xs">
+          <div className="w-2 h-2 bg-red-300 rounded-full animate-pulse"></div>
+          LIVE
+        </div>
+      )}
+    </div>
+  );
+};
+
+// 메인 페이지
+export default function Realtime() {
+  const { 
+    jetsonService, 
+    systemStatus,
+    sensorData: liveSensorData,
+    isConnected 
+  } = useJetsonService();
+
+  const [cameraActive, setCameraActive] = useState(false);
+  const [sleepModeEnabled, setSleepModeEnabled] = useState(false);
+  const [sleepDetectionActive, setSleepDetectionActive] = useState(false);
+  const [suffocationAlert, setSuffocationAlert] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+
+  // 🔥 수면 감지 모델 연동
+  useEffect(() => {
+    const sleepState = systemStatus?.currentState.sleep_state;
+    setSleepModeEnabled(sleepState === 'sleep');
+  }, [systemStatus?.currentState]);
+
+  // 🔥 질식 감지 모델 상태 체크
+  useEffect(() => {
+    const suffocationState = systemStatus?.currentState.safety_state;
+    setSuffocationAlert(suffocationState === 'DANGER');
+  }, [systemStatus?.currentState]);
+
+  // 카메라 제어
+  const toggleCamera = async () => {
+    try {
+      if (cameraActive) {
+        await jetsonService.stopCamera();
+        setCameraActive(false);
+      } else {
+        await jetsonService.startCamera();
+        setCameraActive(true);
+      }
+    } catch (error) {
+      console.error('카메라 제어 오류:', error);
+    }
+  };
+
+  // 수면 감지 모델 제어
+  const toggleSleepDetection = async () => {
+    try {
+      await jetsonService.toggleModel(!sleepDetectionActive);
+      setSleepDetectionActive(!sleepDetectionActive);
+    } catch (error) {
+      console.error('수면 감지 모델 제어 오류:', error);
+    }
+  };
+
+  // 센서 데이터 업데이트 시간 기록
+  useEffect(() => {
+    if (liveSensorData) {
+      setLastUpdate(new Date());
+    }
+  }, [liveSensorData]);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50/30 via-indigo-50/20 to-purple-50/30">
       <div className="space-y-6 pb-20 px-4 pt-6">
-        
         {/* 헤더 */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">실시간 모니터링</h1>
-            <p className="text-slate-600 mt-1">아기의 상태를 실시간으로 확인하세요</p>
+            <h1 className="text-3xl font-bold text-slate-900">실시간 모니터링</h1>
+            <p className="text-slate-600 mt-1">아기의 상태를 실시간으로 확인해요</p>
           </div>
           
           {/* 연결 상태 표시 */}
-          <div className={`flex items-center gap-2 text-sm ${jetsonConnected ? 'text-green-600' : 'text-red-600'}`}>
-            {jetsonConnected ? <Wifi className="w-4 h-4" /> : <WifiOff className="w-4 h-4" />}
-            <span>{jetsonConnected ? '연결됨' : '연결 끊김'}</span>
-          </div>
-        </div>
-
-        {/* 1. 수면모드 ON/OFF 스위치 */}
-        <div className="bg-white rounded-2xl border border-slate-200/60 p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className={`p-3 rounded-xl ${sleepMode ? 'bg-indigo-100' : 'bg-slate-100'}`}>
-                {sleepMode ? <Moon className="w-6 h-6 text-indigo-600" /> : <Sun className="w-6 h-6 text-slate-600" />}
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold text-slate-900">수면 모드</h3>
-                <p className="text-sm text-slate-600">
-                  {sleepMode ? '아기가 잠들어 있어요' : '수면 감지를 시작하세요'}
-                </p>
-              </div>
-            </div>
-            
-            <button
-              onClick={toggleSleepMode}
-              disabled={sleepModeLoading}
-              className={`relative w-16 h-8 rounded-full transition-all duration-300 ${
-                sleepMode ? 'bg-indigo-500' : 'bg-slate-300'
-              } ${sleepModeLoading ? 'opacity-50' : ''}`}
-            >
-              <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-transform duration-300 ${
-                sleepMode ? 'translate-x-9' : 'translate-x-1'
-              }`}>
-                {sleepModeLoading && (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <div className="w-3 h-3 border border-slate-400 border-t-transparent rounded-full animate-spin"></div>
-                  </div>
-                )}
-              </div>
-            </button>
-          </div>
-        </div>
-
-        {/* 2. 실시간 카메라 모니터링 */}
-        <div className="bg-white rounded-2xl border border-slate-200/60 overflow-hidden shadow-sm">
-          <div className="p-6 border-b border-slate-100">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-xl ${cameraActive ? 'bg-green-100' : 'bg-slate-100'}`}>
-                  {cameraActive ? <Eye className="w-5 h-5 text-green-600" /> : <EyeOff className="w-5 h-5 text-slate-600" />}
-                </div>
-                <div>
-                  <h3 className="font-semibold text-slate-900">실시간 카메라</h3>
-                  <p className="text-sm text-slate-600">
-                    {cameraActive ? '스트리밍 중' : sleepMode ? '수면모드에서 자동 활성화됨' : '비활성화됨'}
-                  </p>
-                </div>
-              </div>
-              
-              <button
-                onClick={toggleCamera}
-                disabled={cameraLoading}
-                className={`px-4 py-2 rounded-xl font-medium transition-all ${
-                  cameraActive 
-                    ? 'bg-red-500 hover:bg-red-600 text-white' 
-                    : 'bg-green-500 hover:bg-green-600 text-white'
-                } ${cameraLoading ? 'opacity-50' : ''}`}
-              >
-                {cameraLoading ? '처리 중...' : cameraActive ? '중지' : '시작'}
-              </button>
-            </div>
-          </div>
-          
-          {/* 카메라 화면 영역 */}
-          <div className="relative aspect-video bg-slate-900 flex items-center justify-center">
-            {cameraActive ? (
-              <div className="relative w-full h-full">
-                {/* 실제 환경에서는 Jetson Nano의 스트리밍 URL */}
-                <img 
-                  src="/api/jetson/camera/stream" 
-                  alt="실시간 카메라"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    // 스트림 오류 시 대체 이미지 또는 플레이스홀더
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-                
-                {/* 녹화 중 표시 */}
-                <div className="absolute top-4 left-4 flex items-center gap-2 bg-red-500 text-white px-3 py-1 rounded-full text-sm">
-                  <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                  LIVE
-                </div>
-                
-                {/* 카메라 컨트롤 */}
-                <div className="absolute bottom-4 right-4 flex gap-2">
-                  <button className="p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors">
-                    <Camera className="w-4 h-4" />
-                  </button>
-                  <button className="p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors">
-                    <Video className="w-4 h-4" />
-                  </button>
-                </div>
+          <div className="flex items-center gap-2">
+            {isConnected ? (
+              <div className="flex items-center gap-2 text-green-600 bg-green-50 px-3 py-1 rounded-full">
+                <Wifi className="w-4 h-4" />
+                <span className="text-sm font-medium">연결됨</span>
               </div>
             ) : (
-              <div className="text-center text-slate-400">
-                <Camera className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <p className="text-lg">카메라가 비활성화되어 있습니다</p>
-                <p className="text-sm">{sleepMode ? '수면모드를 켜면 자동으로 활성화됩니다' : '카메라를 켜서 모니터링을 시작하세요'}</p>
+              <div className="flex items-center gap-2 text-red-600 bg-red-50 px-3 py-1 rounded-full">
+                <WifiOff className="w-4 h-4" />
+                <span className="text-sm font-medium">연결 끊김</span>
               </div>
             )}
           </div>
         </div>
 
-        {/* 3. 위험감지 상태 */}
-        <div className="bg-white rounded-2xl border border-slate-200/60 p-6 shadow-sm">
-          <div className="flex items-center gap-4 mb-4">
-            <div className={`p-3 rounded-xl ${
-              dangerStatus.status === 'safe' ? 'bg-green-100' : 'bg-red-100'
-            }`}>
-              {dangerStatus.status === 'safe' ? 
-                <ShieldCheck className="w-6 h-6 text-green-600" /> : 
-                <ShieldAlert className="w-6 h-6 text-red-600" />
-              }
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold text-slate-900">위험 감지 상태</h3>
-              <p className="text-sm text-slate-600">질식감지 AI 모델이 실시간으로 분석 중</p>
+        {/* 🚨 위험 감지 알림 */}
+        {suffocationAlert && (
+          <div className="bg-red-100 border border-red-300 rounded-2xl p-4">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="w-6 h-6 text-red-600 animate-pulse" />
+              <div>
+                <h3 className="font-bold text-red-900">위험 감지!</h3>
+                <p className="text-red-700 text-sm">질식 위험이 감지되었습니다. 즉시 확인해주세요!</p>
+              </div>
             </div>
           </div>
-          
-          <div className={`p-4 rounded-xl border-2 ${
-            dangerStatus.status === 'safe' 
-              ? 'bg-green-50 border-green-200' 
-              : 'bg-red-50 border-red-200'
-          }`}>
-            <div className="flex items-center justify-between mb-2">
-              <span className={`text-2xl font-bold ${
-                dangerStatus.status === 'safe' ? 'text-green-700' : 'text-red-700'
-              }`}>
-                {dangerStatus.status === 'safe' ? 'SAFE' : 'DANGER'}
-              </span>
-              <span className={`text-sm font-medium ${
-                dangerStatus.status === 'safe' ? 'text-green-600' : 'text-red-600'
-              }`}>
-                신뢰도: {dangerStatus.confidence}%
-              </span>
+        )}
+
+        {/* 수면 모드 상태 표시 */}
+        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+          <div className="flex items-center gap-2">
+            <Moon className="w-5 h-5 text-indigo-600" />
+            <span className="font-medium text-slate-900">
+              수면 모드: {sleepModeEnabled ? "ON" : "OFF"}
+            </span>
+          </div>
+          <button
+            onClick={toggleSleepDetection}
+            className="mt-3 px-4 py-2 rounded-lg bg-indigo-500 text-white hover:bg-indigo-600"
+          >
+            {sleepDetectionActive ? "수면 감지 끄기" : "수면 감지 켜기"}
+          </button>
+        </div>
+
+        {/* 실시간 카메라 스트림 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <VideoStream
+            streamUrl={jetsonService.getCameraStreamUrl()}
+            isActive={cameraActive}
+            onToggle={toggleCamera}
+            title="일반 카메라"
+          />
+          <VideoStream
+            streamUrl={`${jetsonService.getCameraStreamUrl()}?type=infrared`}
+            isActive={cameraActive}
+            onToggle={toggleCamera}
+            title="적외선 카메라"
+          />
+        </div>
+
+        {/* 센서 데이터 카드 */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* 온도 */}
+          <div className="bg-white rounded-xl p-6 border border-slate-200/60 shadow-sm">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-orange-100 rounded-lg">
+                <Thermometer className="w-5 h-5 text-orange-600" />
+              </div>
+              <h3 className="font-semibold text-slate-900">실내 온도</h3>
             </div>
-            
-            {dangerStatus.type && (
-              <p className="text-sm text-red-700 mb-2">
-                감지된 위험: {dangerStatus.type === 'suffocation' ? '질식 위험' : 
-                           dangerStatus.type === 'position' ? '자세 이상' : '호흡 이상'}
-              </p>
-            )}
-            
-            <p className="text-xs text-slate-600">
-              마지막 업데이트: {dangerStatus.timestamp.toLocaleTimeString()}
-            </p>
+            <div className="text-3xl font-bold text-slate-900 text-center">
+              {liveSensorData?.temperature?.toFixed(1) || "--"}°C
+            </div>
+          </div>
+
+          {/* 습도 */}
+          <div className="bg-white rounded-xl p-6 border border-slate-200/60 shadow-sm">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Droplets className="w-5 h-5 text-blue-600" />
+              </div>
+              <h3 className="font-semibold text-slate-900">습도</h3>
+            </div>
+            <div className="text-3xl font-bold text-slate-900 text-center">
+              {liveSensorData?.humidity?.toFixed(1) || "--"}%
+            </div>
+          </div>
+
+          {/* 체온 */}
+          <div className="bg-white rounded-xl p-6 border border-slate-200/60 shadow-sm">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-pink-100 rounded-lg">
+                <Droplets className="w-5 h-5 text-pink-600" />
+              </div>
+              <h3 className="font-semibold text-slate-900">아기 체온</h3>
+            </div>
+            <div className="text-3xl font-bold text-slate-900 text-center">
+              {liveSensorData?.bodyTemperature?.toFixed(1) || "--"}°C
+            </div>
           </div>
         </div>
 
-        {/* 4. 환경 센서 정보 */}
-        <div className="bg-white rounded-2xl border border-slate-200/60 p-6 shadow-sm">
-          <h3 className="text-xl font-semibold text-slate-900 mb-4">환경 센서</h3>
-          
-          <div className="grid grid-cols-3 gap-4">
-            {/* 실내 온도 */}
-            <div className="text-center">
-              <div className="p-3 bg-orange-100 rounded-xl mx-auto w-fit mb-2">
-                <Thermometer className="w-6 h-6 text-orange-600" />
-              </div>
-              <div className="text-2xl font-bold text-slate-900">
-                {sensorData.temperature.toFixed(1)}°C
-              </div>
-              <div className="text-sm text-slate-600">실내온도</div>
-            </div>
-            
-            {/* 실내 습도 */}
-            <div className="text-center">
-              <div className="p-3 bg-blue-100 rounded-xl mx-auto w-fit mb-2">
-                <Droplets className="w-6 h-6 text-blue-600" />
-              </div>
-              <div className="text-2xl font-bold text-slate-900">
-                {sensorData.humidity.toFixed(0)}%
-              </div>
-              <div className="text-sm text-slate-600">실내습도</div>
-            </div>
-            
-            {/* 아기 체온 */}
-            <div className="text-center">
-              <div className={`p-3 rounded-xl mx-auto w-fit mb-2 ${
-                sensorData.babyTemp > 37.5 ? 'bg-red-100' : 'bg-green-100'
-              }`}>
-                <User className={`w-6 h-6 ${
-                  sensorData.babyTemp > 37.5 ? 'text-red-600' : 'text-green-600'
-                }`} />
-              </div>
-              <div className={`text-2xl font-bold ${
-                sensorData.babyTemp > 37.5 ? 'text-red-600' : 'text-slate-900'
-              }`}>
-                {sensorData.babyTemp.toFixed(1)}°C
-              </div>
-              <div className="text-sm text-slate-600">아기 체온</div>
-              {sensorData.babyTemp > 37.5 && (
-                <div className="text-xs text-red-600 mt-1">⚠️ 발열 주의</div>
-              )}
-            </div>
-          </div>
-        </div>
-        
+        {/* 최근 업데이트 */}
+        {lastUpdate && (
+          <p className="text-xs text-slate-500 text-right">
+            마지막 업데이트: {lastUpdate.toLocaleTimeString()}
+          </p>
+        )}
       </div>
     </div>
   );
