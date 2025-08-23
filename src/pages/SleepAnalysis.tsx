@@ -70,6 +70,7 @@ export default function SleepAnalysis() {
   const [sleepData, setSleepData] = useState<SleepRecord[]>([]);
   const [statistics, setStatistics] = useState<SleepStatistics | null>(null);
   const [prediction, setPrediction] = useState<SleepPrediction | null>(null);
+
   const [selectedMethod, setSelectedMethod] = useState<number>(0);
 
   // 더미 데이터로 초기화 - 신생아 기준
@@ -293,6 +294,7 @@ export default function SleepAnalysis() {
                 stroke="#e2e8f0"
                 strokeWidth="16"
               />
+
               
               {/* 신생아 수면 패턴 (2-3시간 간격으로 반복) */}
               {todayData && (
@@ -447,7 +449,6 @@ export default function SleepAnalysis() {
                 <p className="text-sm text-indigo-700">AI 기반 분석 결과</p>
               </div>
             </div>
-
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-white/80 rounded-xl p-4">
@@ -478,23 +479,28 @@ export default function SleepAnalysis() {
                   ></div>
                 </div>
               </div>
-
-              {prediction.recommendations && prediction.recommendations.length > 0 && (
-                <div className="bg-white/80 rounded-xl p-4">
-                  <p className="text-sm text-indigo-700 mb-2">추천사항</p>
-                  <ul className="space-y-1">
-                    {prediction.recommendations.map((recommendation, index) => (
-                      <li key={index} className="flex items-center gap-2 text-xs text-indigo-800">
-                        <Lightbulb className="w-3 h-3 text-indigo-500" />
-                        {recommendation}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+              <div className="w-full bg-indigo-200 rounded-full h-2">
+                <div 
+                  className="bg-indigo-600 h-2 rounded-full transition-all duration-1000"
+                  style={{ width: `${prediction.confidence}%` }}
+                ></div>
+              </div>
+      {prediction.recommendations && prediction.recommendations.length > 0 && (
+        <div className="bg-white/80 rounded-xl p-4">
+          <p className="text-sm text-indigo-700 mb-2">추천사항</p>
+          <ul className="space-y-1">
+            {prediction.recommendations.map((recommendation, index) => (
+              <li key={index} className="flex items-center gap-2 text-xs text-indigo-800">
+                <Lightbulb className="w-3 h-3 text-indigo-500" />
+                {recommendation}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  </div>
+)}
 
         {/* 수면 교육 섹션 */}
         <div className="bg-white rounded-2xl border border-slate-200/60 overflow-hidden shadow-sm">
@@ -596,7 +602,7 @@ export default function SleepAnalysis() {
                         {step}
                       </div>
                     </div>
-                  ))}
+                  ))}햣
                 </div>
               )}
             </div>
