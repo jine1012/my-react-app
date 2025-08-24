@@ -78,7 +78,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
           {({ isActive }) => (
             <div className={`tab-content ${isActive ? 'active' : ''}`}>
               <List size={20} />
-              <span>로그</span>
+              <span>일기</span>
             </div>
           )}
         </NavLink>

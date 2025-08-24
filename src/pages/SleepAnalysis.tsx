@@ -479,12 +479,7 @@ export default function SleepAnalysis() {
                   ></div>
                 </div>
               </div>
-              <div className="w-full bg-indigo-200 rounded-full h-2">
-                <div 
-                  className="bg-indigo-600 h-2 rounded-full transition-all duration-1000"
-                  style={{ width: `${prediction.confidence}%` }}
-                ></div>
-              </div>
+              
       {prediction.recommendations && prediction.recommendations.length > 0 && (
         <div className="bg-white/80 rounded-xl p-4">
           <p className="text-sm text-indigo-700 mb-2">추천사항</p>

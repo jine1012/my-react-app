@@ -8,8 +8,11 @@ import {
   Sparkles,
   Baby,
   Wifi,
-  WifiOff
+  WifiOff,
+  Heart
 } from "lucide-react";
+// import { Thermometer, Droplets } from "lucide-react";
+import babyHero from "../assets/baby-hero.png";
 
 interface SensorData {
   roomTemperature: number;
@@ -24,6 +27,14 @@ interface BabyInfo {
   name: string;
   ageInMonths: number;
   weight: number;
+}
+
+// 🔥 Log 인터페이스 (Logs.tsx에서 가져온 LogItem)
+interface Log {
+  id: number;
+  type: "cry" | "temp" | "note";
+  timestamp: string;
+  message: string;
 }
 
 export default function Home() {
@@ -41,6 +52,25 @@ export default function Home() {
     ageInMonths: 8,     // 실제 개월 수로 변경 가능
     weight: 8.5         // 실제 체중으로 변경 가능
   });
+
+  // 🔥 새로 추가된 logs 상태
+  const [logs, setLogs] = useState<Log[]>([]);
+  const last = logs[0];
+
+  // Baby hero image from assets
+  // const babyHero = "https://images.unsplash.com/photo-1544717440-6e4d999de2a1?w=400&h=400&fit=crop&crop=face";
+
+  // 🔥 localStorage에서 logs 불러오기
+  useEffect(() => {
+    const stored = localStorage.getItem("baby-logs");
+    if (stored) {
+      try {
+        setLogs(JSON.parse(stored));
+      } catch {
+        console.error("Failed to parse logs");
+      }
+    }
+  }, []);
 
   // 젯슨나노 연결 상태 실시간 업데이트
   useEffect(() => {
@@ -75,33 +105,34 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="mobile-home">
-      {/* 메인 히어로 카드 */}
-      <div className="home-hero-card">
-        {/* 헤더 */}
-        <div className="hero-header">
-          <div className="hero-badge">
-            <Sparkles className="badge-icon" />
-            Baby Love
+    <div className="min-h-screen bg-amber-50 px-4 py-6">
+      {/* 메인 카드 */}
+      <div className="bg-white rounded-3xl shadow-lg border border-amber-200/50 p-6 mb-6">
+        {/* 헤더 텍스트 */}
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-100 to-orange-100 border border-amber-200 rounded-full px-4 py-2 mb-4">
+            <Sparkles className="w-4 h-4 text-amber-600" />
+            <span className="text-sm font-medium text-amber-800">같이 보는 시간까지 함께하는</span>
           </div>
-          <h1 className="hero-title">
-            사랑스러운<br />
-            <span className="hero-title-highlight">{babyInfo.name}</span>
+          <h1 className="text-2xl font-bold text-stone-800 mb-2">
+            우리 아기의{" "}
+            <span className="bg-gradient-to-r from-amber-800 to-orange-800 bg-clip-text text-transparent">
+              모든 것
+            </span>
           </h1>
-          <p className="hero-subtitle">
-            ✨<br />
-            {babyInfo.ageInMonths}개월 아기의 하루를 보여드릴게요.
-          </p>
+          <p className="text-amber-600/80 text-sm">오늘 하루의 활동 유형은</p>
         </div>
 
-        {/* 이미지 영역 */}
+        {/* 아기 이미지 영역 */}
         <div className="hero-image-container">
           <div className="hero-image-wrapper">
+            {/* 점선 테두리 배경 블러 효과 */}
+            <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-orange-300/30 to-yellow-300/30 rounded-full blur-sm animate-pulse"></div>
             <div className="image-ring"></div>
             <img 
-              className="hero-image" 
-              src="/happy-baby.webp" 
-              alt="Happy Baby"
+              src={babyHero} 
+              alt="아기 아이콘" 
+              className="hero-image"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = 'none';
@@ -109,15 +140,33 @@ export default function Home() {
                 if (placeholder) placeholder.style.display = 'flex';
               }}
             />
-            <div className="placeholder" style={{ display: 'none', width: '160px', height: '160px', background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', borderRadius: '50%', alignItems: 'center', justifyContent: 'center', fontSize: '4rem' }}>
+            <div className="placeholder" style={{ 
+              display: 'none', 
+              width: '160px', 
+              height: '160px', 
+              background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', 
+              borderRadius: '50%', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              fontSize: '4rem' 
+            }}>
               👶
             </div>
             <div className="floating-icon floating-heart">
-              <span className="icon-sm">❤️</span>
+              <Heart className="icon-sm" />
             </div>
             <div className="floating-icon floating-sparkle">
-              <span className="icon-sm">✨</span>
+              <Sparkles className="icon-xs" />
             </div>
+          </div>
+        </div>
+
+        {/* 아기 정보 */}
+        <div className="text-center mb-6">
+          <h3 className="text-xl font-bold text-amber-800 mb-2">활발한 활동</h3>
+          <div className="text-amber-600/80 text-sm leading-relaxed">
+            안녕하세요! ✨<br />
+            오늘 하루의 활동을 보여드릴게요.
           </div>
         </div>
 
@@ -135,14 +184,14 @@ export default function Home() {
             className="flex items-center gap-2 bg-gradient-to-r from-orange-700 to-amber-700 hover:from-orange-800 hover:to-amber-800 rounded-2xl px-4 py-3 transition-all duration-200 cursor-pointer shadow-sm"
           >
             <NotebookPen className="w-5 h-5 text-white" />
-            <span className="font-medium text-white text-sm">일기</span>
+            <span className="font-medium text-white text-sm">분석</span>
           </Link>
           <Link
             to="/logs"
             className="flex items-center gap-2 bg-gradient-to-r from-amber-700 to-yellow-700 hover:from-amber-800 hover:to-yellow-800 rounded-2xl px-4 py-3 transition-all duration-200 cursor-pointer shadow-sm"
           >
             <List className="w-5 h-5 text-white" />
-            <span className="font-medium text-white text-sm">로그</span>
+            <span className="font-medium text-white text-sm">일기</span>
           </Link>
         </div>
       </div>
