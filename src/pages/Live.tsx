@@ -317,92 +317,116 @@ export default function Live() {
 
         
 
-        {/* 🔥 센서 데이터 카드 - 안전 상태 포함 */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* 실내 온도 */}
-          <div className="bg-white rounded-xl p-6 border border-slate-200/60 shadow-sm">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <Thermometer className="w-5 h-5 text-orange-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-slate-900">실내 온도</h3>
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl font-bold text-slate-900">
-                    {liveSensorData?.temperature?.toFixed(1) || "--"}°C
-                  </span>
-                  {liveSensorData?.temperature && (
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      liveSensorData.temperature >= 21 && liveSensorData.temperature <= 24
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-orange-100 text-orange-700'
-                    }`}>
-                      {liveSensorData.temperature >= 21 && liveSensorData.temperature <= 24 
-                        ? '적정' : '주의'}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
+        {/* 🔥 센서 데이터 카드 - 홈 페이지 스타일 적용 */}
+       <div className="grid grid-cols-1 gap-4">
+         {/* 첫 번째 줄: 환경 센서 */}
+         <div className="grid grid-cols-2 gap-4">
+           {/* 실내 온도 */}
+           <div className="bg-white rounded-2xl shadow-sm border border-amber-200/50 p-5">
+             <div className="flex items-center justify-between mb-2">
+               <div className="w-12 h-12 bg-gradient-to-br from-red-100 to-orange-100 rounded-2xl flex items-center justify-center">
+                 <Thermometer className="w-6 h-6 text-red-500" />
+               </div>
+               <span className="text-2xl font-bold text-stone-800">
+                 {liveSensorData?.temperature?.toFixed(1) || "--"}°C
+               </span>
+             </div>
+             <p className="text-sm font-medium text-stone-600">실내 온도</p>
+             <div className="mt-2">
+               {liveSensorData?.temperature && (
+                 <div className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
+                   liveSensorData.temperature >= 21 && liveSensorData.temperature <= 24
+                     ? 'bg-green-100 text-green-700'
+                     : 'bg-orange-100 text-orange-700'
+                 }`}>
+                   {liveSensorData.temperature >= 21 && liveSensorData.temperature <= 24 ? '적정 온도' : '조절 필요'}
+                 </div>
+               )}
+             </div>
+           </div>
 
-          {/* 습도 */}
-          <div className="bg-white rounded-xl p-6 border border-slate-200/60 shadow-sm">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Droplets className="w-5 h-5 text-blue-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-slate-900">습도</h3>
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl font-bold text-slate-900">
-                    {liveSensorData?.humidity?.toFixed(1) || "--"}%
-                  </span>
-                  {liveSensorData?.humidity && (
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      liveSensorData.humidity >= 40 && liveSensorData.humidity <= 60
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-blue-100 text-blue-700'
-                    }`}>
-                      {liveSensorData.humidity >= 40 && liveSensorData.humidity <= 60
-                        ? '적정' : '조절 필요'}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
+           {/* 습도 */}
+           <div className="bg-white rounded-2xl shadow-sm border border-amber-200/50 p-5">
+             <div className="flex items-center justify-between mb-2">
+               <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl flex items-center justify-center">
+                 <Droplets className="w-6 h-6 text-blue-500" />
+               </div>
+               <span className="text-2xl font-bold text-stone-800">
+                 {liveSensorData?.humidity?.toFixed(1) || "--"}%
+               </span>
+             </div>
+             <p className="text-sm font-medium text-stone-600">실내 습도</p>
+             <div className="mt-2">
+               {liveSensorData?.humidity && (
+                 <div className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
+                   liveSensorData.humidity < 40 ? 'bg-orange-100 text-orange-700' :
+                   liveSensorData.humidity <= 60 ? 'bg-green-100 text-green-700' :
+                   'bg-blue-100 text-blue-700'
+                 }`}>
+                   {liveSensorData.humidity < 40 ? '건조' : liveSensorData.humidity <= 60 ? '적정 습도' : '습함'}
+                 </div>
+               )}
+             </div>
+           </div>
+         </div>
 
-          {/* 아기 체온 */}
-          <div className="bg-white rounded-xl p-6 border border-slate-200/60 shadow-sm">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-pink-100 rounded-lg">
-                <Heart className="w-5 h-5 text-pink-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-slate-900">아기 체온</h3>
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl font-bold text-slate-900">
-                    {liveSensorData?.bodyTemperature?.toFixed(1) || "--"}°C
-                  </span>
-                  {liveSensorData?.bodyTemperature && (
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      liveSensorData.bodyTemperature >= 36.0 && liveSensorData.bodyTemperature <= 37.5
-                        ? 'bg-green-100 text-green-700'
-                        : liveSensorData.bodyTemperature >= 38.0
-                        ? 'bg-red-100 text-red-700'
-                        : 'bg-yellow-100 text-yellow-700'
-                    }`}>
-                      {liveSensorData.bodyTemperature >= 38.0 ? '발열' :
-                       liveSensorData.bodyTemperature >= 37.6 ? '상승' :
-                       liveSensorData.bodyTemperature >= 36.0 ? '정상' : '저체온'}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+         {/* 두 번째 줄: 아기 체온 (강조된 큰 카드) */}
+         <div className={`bg-white rounded-2xl shadow-sm border p-6 ring-2 ${
+           liveSensorData?.bodyTemperature ? 
+             (liveSensorData.bodyTemperature >= 36.0 && liveSensorData.bodyTemperature <= 37.5 ? 'ring-green-200 border-green-200' :
+              liveSensorData.bodyTemperature >= 38.0 ? 'ring-red-200 border-red-200 animate-pulse' :
+              'ring-yellow-200 border-yellow-200') :
+             'ring-amber-200 border-amber-200/50'
+         }`}>
+           <div className="flex items-center justify-between mb-4">
+             <div className="flex items-center gap-3">
+               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${
+                 liveSensorData?.bodyTemperature ?
+                   (liveSensorData.bodyTemperature >= 36.0 && liveSensorData.bodyTemperature <= 37.5 ? 'bg-green-100' :
+                    liveSensorData.bodyTemperature >= 38.0 ? 'bg-red-100' :
+                    'bg-yellow-100') :
+                   'bg-pink-100'
+               }`}>
+                 <Heart className={`w-7 h-7 ${
+                   liveSensorData?.bodyTemperature ?
+                     (liveSensorData.bodyTemperature >= 36.0 && liveSensorData.bodyTemperature <= 37.5 ? 'text-green-600' :
+                      liveSensorData.bodyTemperature >= 38.0 ? 'text-red-600' :
+                      'text-yellow-600') :
+                     'text-pink-600'
+                 }`} />
+               </div>
+               <div>
+                 <h3 className="font-bold text-stone-800 text-lg">아기 체온</h3>
+                 <p className="text-sm text-stone-600">적외선 센서</p>
+               </div>
+             </div>
+             <div className="text-right">
+               <div className={`text-3xl font-bold ${
+                 liveSensorData?.bodyTemperature ?
+                   (liveSensorData.bodyTemperature >= 36.0 && liveSensorData.bodyTemperature <= 37.5 ? 'text-green-600' :
+                    liveSensorData.bodyTemperature >= 38.0 ? 'text-red-600' :
+                    'text-yellow-600') :
+                   'text-stone-800'
+               }`}>
+                 {liveSensorData?.bodyTemperature?.toFixed(1) || "--"}°C
+               </div>
+               {liveSensorData?.bodyTemperature && (
+                 <div className={`inline-block px-3 py-1 rounded-full text-sm font-medium mt-2 ${
+                   liveSensorData.bodyTemperature >= 36.0 && liveSensorData.bodyTemperature <= 37.5 
+                     ? 'bg-green-100 text-green-600'
+                     : liveSensorData.bodyTemperature >= 38.0 
+                     ? 'bg-red-100 text-red-600'
+                     : 'bg-yellow-100 text-yellow-600'
+                 }`}>
+                   {liveSensorData.bodyTemperature >= 38.0 ? '발열' :
+                    liveSensorData.bodyTemperature >= 37.6 ? '상승' :
+                    liveSensorData.bodyTemperature >= 36.0 ? '정상' : '저체온'}
+                 </div>
+               )}
+             </div>
+           </div>
+         </div>
+       </div>
 
         {/* 🔥 전체 환경 안전 상태 */}
         <div className={`rounded-xl p-4 border ${
