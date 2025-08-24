@@ -6,3 +6,4 @@ export type CreateMessageFn = (text: string, options?: Record<string, unknown>) 
 
 // 라이브러리가 ActionProvider/MessageParser 생성자에 넘기는 stateRef 형태
 export type StateRef = { state: ChatState };
+
