@@ -9,6 +9,7 @@ import Logs from './pages/Logs';
 
 import CryAnalysis from './pages/CryAnalysis';
 import SleepAnalysis from './pages/SleepAnalysis'; 
+import { BabyChatbot } from './components/BabyChatbot';
 import './index.css';
 
 const router = createBrowserRouter([
@@ -22,6 +23,7 @@ const router = createBrowserRouter([
       { path: 'logs', element: <Logs /> },
       { path: 'analysis', element: <CryAnalysis /> }, // 경로 변경: /diary → /analysis
       // { path: 'diary', element: <Diary /> }, // 필요시 주석 해제
+      { path: 'chatbot', element: <BabyChatbot /* babyAgeInMonths={6} */ /> },
       { path: '*', element: <div style={{ padding: 16 }}>Not Found</div> },
     ],
   },

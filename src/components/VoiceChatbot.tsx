@@ -1,6 +1,6 @@
 // src/components/VoiceChatbot.tsx
 import React, { useState, useRef, useEffect } from 'react';
-import { Mic, MicOff, Volume2, VolumeX, Send, Loader2, MessageCircle, Baby } from 'lucide-react';
+import { Mic, MicOff, Volume2, VolumeX, Send, Loader2, Baby } from 'lucide-react';
 
 interface Message {
   id: string;

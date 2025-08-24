@@ -41,7 +41,6 @@ interface BabyChatbotProps {
 
 export const BabyChatbot: React.FC<BabyChatbotProps> = ({ 
   babyAgeInMonths, 
-  onAgeUpdate 
 }) => {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
@@ -49,6 +48,7 @@ export const BabyChatbot: React.FC<BabyChatbotProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [showQuickActions, setShowQuickActions] = useState(true);
   const [quickQuestions, setQuickQuestions] = useState<QuickQuestion[]>([]);
+  const hasWelcomedRef = useRef(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -59,7 +59,7 @@ export const BabyChatbot: React.FC<BabyChatbotProps> = ({
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const [autoPlayTTS, setAutoPlayTTS] = useState(true);
-  const [selectedVoice, setSelectedVoice] = useState('nova');
+  const [selectedVoice] = useState('nova');
   
   // 🎤 음성 관련 refs (기존 유지)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -73,15 +73,18 @@ export const BabyChatbot: React.FC<BabyChatbotProps> = ({
     }
   }, [messages, isLoading]);
 
-  // 🔥 컴포넌트 마운트 시 초기 설정
-  useEffect(() => {
-    loadQuickQuestions();
-    
-    // 환영 메시지 추가
-    if (messages.length === 0) {
-      const welcomeMessage: Message = {
-        id: Date.now().toString(),
-        text: `안녕하세요! 👶 영유아 케어 전문 상담사입니다.
+  // 1) 빠른 질문 로드는 마운트 시 한 번
+useEffect(() => {
+  loadQuickQuestions();
+}, []);
+
+// 2) 환영 메시지는 마운트 시 한 번만
+useEffect(() => {
+  if (hasWelcomedRef.current) return;
+
+  const welcomeMessage: Message = {
+    id: Date.now().toString(),
+    text: `안녕하세요! 👶 영유아 케어 전문 상담사입니다.
 
 현재 상담 가능한 주제:
 • 🏥 예방접종 일정 및 주의사항
@@ -93,13 +96,15 @@ ${babyAgeInMonths !== undefined
   : '먼저 아기의 월령을 설정하시면 더 정확한 조언을 드릴 수 있어요.'}
 
 궁금한 점을 편안하게 물어보세요!`,
-        sender: 'bot',
-        timestamp: new Date(),
-        hasRagKnowledge: true
-      };
-      setMessages([welcomeMessage]);
-    }
-  }, [babyAgeInMonths]);
+    sender: 'bot',
+    timestamp: new Date(),
+    hasRagKnowledge: true
+  };
+
+  setMessages([welcomeMessage]);
+  hasWelcomedRef.current = true;
+}, [babyAgeInMonths]); 
+
 
   // 🔥 빠른 질문 로드
   const loadQuickQuestions = async () => {
@@ -121,77 +126,72 @@ ${babyAgeInMonths !== undefined
     }
   };
 
-  // 🔥 RAG 기반 메시지 전송
-  const sendMessage = async (text?: string) => {
-    const messageText = text || input.trim();
-    if (!messageText) return;
+  // 🔥 메시지 전송 (FastAPI /ask와 연결)
+const sendMessage = async (text?: string) => {
+  const messageText = text || input.trim();
+  if (!messageText) return;
 
-    // 사용자 메시지 추가
-    const userMessage: Message = {
+  const userMessage: Message = {
+    id: Date.now().toString(),
+    text: messageText,
+    sender: 'user',
+    timestamp: new Date(),
+  };
+
+  setMessages(prev => [...prev, userMessage]);
+  setInput('');
+  setError(null);
+  setIsLoading(true);
+  setShowQuickActions(false);
+
+  try {
+    // ✅ 프록시 경유: /api/ask -> http://localhost:8000/ask
+    const response = await fetch('/api/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: messageText }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      // 인덱스 미구축 등 서버에서 내려준 에러 표시
+      throw new Error(result?.detail || '서버 오류');
+    }
+
+    const answerText =
+      result?.answer ??
+      result?.response ??
+      (typeof result === 'string' ? result : '');
+
+    const botMessage: Message = {
       id: Date.now().toString(),
-      text: messageText,
-      sender: 'user',
-      timestamp: new Date()
+      text: answerText || '답변을 가져오지 못했습니다.',
+      sender: 'bot',
+      timestamp: new Date(),
+      hasRagKnowledge: true,
     };
 
-    setMessages(prev => [...prev, userMessage]);
-    setInput('');
-    setError(null);
-    setIsLoading(true);
-    setShowQuickActions(false);
+    setMessages(prev => [...prev, botMessage]);
 
-    try {
-      // 🔥 기존 chat API 사용 (RAG 기능 통합됨)
-      const response = await fetch('/api/chat/message', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: messageText,
-          babyInfo: {
-            name: '우리 아기',
-            ageInMonths: babyAgeInMonths || 0,
-            weight: 8.5 // 기본값, 추후 설정 가능하게 확장
-          }
-        }),
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        const botMessage: Message = {
-          id: result.messageId?.toString() || Date.now().toString(),
-          text: result.response,
-          sender: 'bot',
-          timestamp: new Date(),
-          hasRagKnowledge: result.hasRagKnowledge,
-          knowledgeCategories: result.knowledgeCategories
-        };
-
-        setMessages(prev => [...prev, botMessage]);
-
-        // TTS로 음성 재생 (기존 기능 유지)
-        if (autoPlayTTS && result.response) {
-          await playTTS(result.response);
-        }
-      } else {
-        setError(result.error || '답변 생성에 실패했습니다.');
-      }
-    } catch (error) {
-      console.error('메시지 전송 실패:', error);
-      setError('상담 서비스에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.');
-    } finally {
-      setIsLoading(false);
+    if (autoPlayTTS && answerText) {
+      await playTTS(answerText);
     }
-  };
+  } catch (err: unknown) {
+    console.error('메시지 전송 실패:', err);
+    const msg = err instanceof Error ? err.message : '연결 실패';
+    setError(msg || '상담 서비스에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.');
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   // 🔥 빠른 질문 클릭
   const handleQuickQuestion = (question: QuickQuestion) => {
     sendMessage(question.question);
   };
 
-  // 🔥 카테고리별 아이콘 매핑
+  // 🎤 카테고리별 아이콘 매핑
   const getCategoryIcon = (category: string) => {
     switch (category) {
       case 'vaccination':

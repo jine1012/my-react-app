@@ -12,10 +12,11 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/api': {
-        target: 'http://localhost:5000',
+      "/api": {
+        target: "http://localhost:8000", // ← FastAPI 포트에 맞춤
         changeOrigin: true,
         secure: false,
+        rewrite: (path) => path.replace(/^\/api/, ""), // ← /api/ask -> /ask 로 전달
       },
     },
   },
