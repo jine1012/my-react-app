@@ -220,7 +220,7 @@ const sendMessage = async (text?: string) => {
       };
 
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         await processVoiceInput(audioBlob);
         stream.getTracks().forEach(track => track.stop());
       };
@@ -248,7 +248,7 @@ const sendMessage = async (text?: string) => {
 
     try {
       const formData = new FormData();
-      formData.append('audio', audioBlob, 'recording.wav');
+      formData.append('audio', audioBlob, 'recording.webm');
 
       const response = await fetch('/api/voice/stt', {
         method: 'POST',

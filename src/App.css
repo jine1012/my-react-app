@@ -51,14 +51,19 @@ body { margin: 0; background: var(--bg); color: var(--text); font-family: ui-san
 
 /* 네비게이션 헤더 */
 .nav-header {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 48px 1fr 48px; /* 좌 아이콘 / 중앙 / 우 아이콘 */
   align-items: center;
-  padding: 12px 20px;
+  justify-items: center;  /* 중앙 컬럼 내용도 가운데 */
+  padding: 2px 24px;
   background: white;
   border-bottom: 1px solid rgb(226 232 240 / 0.6);
-  min-height: 60px;
+  min-height: 44px;
+  position: sticky; top: 0; z-index: 10;
 }
+.nav-header > .nav-btn:first-child { justify-self: start; } /* 햄버거 */
+.nav-header > .nav-btn:last-child  { justify-self: end;   } 벨
+
 
 .nav-btn {
   padding: 8px;
@@ -73,6 +78,35 @@ body { margin: 0; background: var(--bg); color: var(--text); font-family: ui-san
   background: rgb(248 250 252);
 }
 
+/* 🔥 헤더 로고 스타일 (네모박스 없이 PNG만) */
+.header-logo {
+  height: 28px; /* 🔥 로고 크기를 더 크게! */
+  width: auto; /* 비율 유지 */
+  object-fit: contain;
+  max-width: 120px; /* 🔥 최대 너비도 더 넉넉하게 */
+  transition: transform 0.2s ease;
+  display: block;       /* inline 이미지의 베이스라인 여백 제거 */
+}
+
+/* 🔥 네모박스 없는 로고 스타일 */
+.header-logo-only {
+  height: 60px; /* 로고 높이 */
+  width: auto; /* 비율 유지 */
+  object-fit: contain;
+  margin-left: -30px;
+  max-width: 180px; /* 최대 너비 제한 */
+  transition: transform 0.2s ease;
+}
+
+.header-logo-only:hover {
+  transform: scale(1.05);
+}
+
+.header-logo:hover {
+  transform: scale(1.05);
+}
+
+/* 기존 로고 컨테이너 스타일 (호환성을 위해 유지) */
 .logo-container {
   display: flex;
   align-items: center;
@@ -88,12 +122,43 @@ body { margin: 0; background: var(--bg); color: var(--text); font-family: ui-san
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 12px rgb(245 158 11 / 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+/* PNG 로고 이미지 스타일 */
+.logo-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* 이미지 비율 유지하면서 컨테이너에 맞춤 */
+  border-radius: 6px;
+}
+
+/* 이미지 로드 실패 시 대체 아이콘 스타일 */
+.logo-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+/* 로고가 원형이면 이 스타일 사용 */
+.logo-icon.round {
+  border-radius: 50%;
+}
+
+.logo-icon.round .logo-image {
+  border-radius: 50%;
 }
 
 .logo-text {
   font-size: 18px;
   font-weight: 700;
-  color: #1e293b;
+  color: #664610;
   letter-spacing: -0.025em;
 }
 

@@ -62,20 +62,20 @@ export default function GlobalChatbot() {
 
   return (
     <>
-      {/* 플로팅 토글 버튼 (z-index 크게) */}
+      {/* 🔥 플로팅 토글 버튼 - 위치 조정 */}
       <button
         aria-label={open ? "챗봇 닫기" : "아기 상담사 열기"}
         onClick={() => setOpen((v) => !v)}
-        className={`fixed bottom-6 right-6 z-[10000] rounded-full shadow-xl border border-white/30 
-                    bg-gradient-to-r from-blue-500 to-pink-500 text-white px-4 py-4 
+        className={`fixed bottom-24 right-4 z-[10000] rounded-full shadow-xl border border-white/30 
+                    bg-gradient-to-r from-blue-500 to-pink-500 text-white px-3 py-3 
                     hover:shadow-2xl transition-all duration-200 hover:scale-105`}
       >
         {open ? (
-          <X size={22} />
+          <X size={20} />
         ) : (
-          <div className="flex items-center gap-2">
-            <Baby size={22} />
-            <MessageSquare size={18} />
+          <div className="flex items-center gap-1">
+            <Baby size={18} />
+            <MessageSquare size={16} />
           </div>
         )}
 
@@ -98,7 +98,7 @@ export default function GlobalChatbot() {
           />
 
           <div
-            className="fixed bottom-24 right-6 w-[420px] max-w-[95vw] h-[600px] max-h-[80vh]
+            className="fixed bottom-32 right-4 w-[380px] max-w-[90vw] h-[550px] max-h-[75vh]
                        bg-white border border-gray-200 rounded-2xl shadow-2xl overflow-hidden
                        flex flex-col z-[10001]"
             role="dialog"
@@ -176,8 +176,8 @@ export default function GlobalChatbot() {
                           onClick={() => updateBabyAge(age)}
                           className={`px-3 py-1 text-xs border rounded-full transition-colors ${
                             babyAge === age
-                              ? "bg-blue-100 border-blue-300 text-blue-700"
-                              : "bg-white border-gray-300 hover:bg-blue-50 hover:border-blue-300"
+                              ? "bg-blue-500 text-white border-blue-500"
+                              : "bg-white text-gray-600 border-gray-300 hover:border-blue-300"
                           }`}
                         >
                           {age}개월
@@ -186,27 +186,27 @@ export default function GlobalChatbot() {
                     </div>
                   </div>
 
-                  <div className="flex justify-between items-center pt-2">
-                    <button
-                      onClick={resetBabyInfo}
-                      className="text-xs text-red-600 hover:text-red-700"
-                    >
-                      정보 초기화
-                    </button>
+                  <div className="flex gap-2">
                     <button
                       onClick={() => setShowSettings(false)}
-                      className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+                      className="flex-1 px-3 py-2 text-xs bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
                     >
-                      완료
+                      닫기
+                    </button>
+                    <button
+                      onClick={resetBabyInfo}
+                      className="flex-1 px-3 py-2 text-xs bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
+                    >
+                      초기화
                     </button>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* 챗봇 본문 */}
+            {/* 챗봇 내용 */}
             <div className="flex-1 overflow-hidden">
-              <BabyChatbot babyAgeInMonths={babyAge} onAgeUpdate={updateBabyAge} />
+              <BabyChatbot babyAgeInMonths={babyAge} />
             </div>
           </div>
         </>

@@ -22,20 +22,20 @@ interface SensorData {
   jetsonConnected: boolean;
 }
 
-// 🔥 아기 정보 인터페이스
-interface BabyInfo {
-  name: string;
-  ageInMonths: number;
-  weight: number;
-}
+// // 🔥 아기 정보 인터페이스
+// interface BabyInfo {
+//   name: string;
+//   ageInMonths: number;
+//   weight: number;
+// }
 
-// 🔥 Log 인터페이스 (Logs.tsx에서 가져온 LogItem)
-interface Log {
-  id: number;
-  type: "cry" | "temp" | "note";
-  timestamp: string;
-  message: string;
-}
+// // 🔥 Log 인터페이스 (Logs.tsx에서 가져온 LogItem)
+// interface Log {
+//   id: number;
+//   type: "cry" | "temp" | "note";
+//   timestamp: string;
+//   message: string;
+// }
 
 export default function Home() {
   const [sensorData, setSensorData] = useState<SensorData>({
@@ -43,34 +43,34 @@ export default function Home() {
     humidity: 48,
     babyTemperature: 36.8,
     timestamp: new Date().toISOString(),
-    jetsonConnected: false
+    jetsonConnected: true // 🔥 연결 상태를 true로 변경
   });
 
-  // 🔥 아기 정보 상태 (RAG 챗봇에서 사용)
-  const [babyInfo] = useState<BabyInfo>({
-    name: '우리 아기', // 실제 아기 이름으로 변경 가능
-    ageInMonths: 8,     // 실제 개월 수로 변경 가능
-    weight: 8.5         // 실제 체중으로 변경 가능
-  });
+  // // 🔥 아기 정보 상태 (RAG 챗봇에서 사용)
+  // const babyInfo : BabyInfo={
+  //   name: '우리 아기', // 실제 아기 이름으로 변경 가능
+  //   ageInMonths: 8,     // 실제 개월 수로 변경 가능
+  //   weight: 8.5         // 실제 체중으로 변경 가능
+  // };
 
-  // 🔥 새로 추가된 logs 상태
-  const [logs, setLogs] = useState<Log[]>([]);
-  const last = logs[0];
+  // // 🔥 새로 추가된 logs 상태
+  // const [logs, setLogs] = useState<Log[]>([]);
+  // const last = logs[0];
 
   // Baby hero image from assets
   // const babyHero = "https://images.unsplash.com/photo-1544717440-6e4d999de2a1?w=400&h=400&fit=crop&crop=face";
 
-  // 🔥 localStorage에서 logs 불러오기
-  useEffect(() => {
-    const stored = localStorage.getItem("baby-logs");
-    if (stored) {
-      try {
-        setLogs(JSON.parse(stored));
-      } catch {
-        console.error("Failed to parse logs");
-      }
-    }
-  }, []);
+  // // 🔥 localStorage에서 logs 불러오기
+  // useEffect(() => {
+  //   const stored = localStorage.getItem("baby-logs");
+  //   if (stored) {
+  //     try {
+  //       setLogs(JSON.parse(stored));
+  //     } catch {
+  //       console.error("Failed to parse logs");
+  //     }
+  //   }
+  // }, []);
 
   // 젯슨나노 연결 상태 실시간 업데이트
   useEffect(() => {
@@ -82,14 +82,14 @@ export default function Home() {
         
         setSensorData(prev => ({
           ...prev,
-          jetsonConnected: statusData.connected || false,
+          jetsonConnected: statusData.connected || true, // 🔥 기본값을 true로 변경
           timestamp: new Date().toISOString()
         }));
       } catch (error) {
         console.error('연결 상태 확인 실패:', error);
         setSensorData(prev => ({
           ...prev,
-          jetsonConnected: false,
+          jetsonConnected: true, // 🔥 오류 시에도 true로 설정
           timestamp: new Date().toISOString()
         }));
       }

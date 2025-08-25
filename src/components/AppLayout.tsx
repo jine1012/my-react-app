@@ -1,12 +1,14 @@
 // src/components/AppLayout.tsx
 import '../App.css';
 import { NavLink, Outlet } from 'react-router-dom';
-import { Home, Camera, Moon, List, BarChart3, Menu, Bell, Heart } from 'lucide-react';
+import { Home, Camera, Moon, List, BarChart3, Menu, Bell } from 'lucide-react';
 import ScrollToTop from './ScrollToTop';
 import ProfileBar from './ProfileBar';
+// 🔥 PNG 로고 이미지 import (본인의 PNG 파일명으로 변경하세요)
+import logoImage from '../assets/logo.png';
 
-type AppLayoutProps = { 
-  children?: React.ReactNode; 
+type AppLayoutProps = {
+  children?: React.ReactNode;
 };
 
 export default function AppLayout({ children }: AppLayoutProps) {
@@ -24,10 +26,22 @@ export default function AppLayout({ children }: AppLayoutProps) {
         </button>
         
         <div className="logo-container">
-          <div className="logo-icon">
-            <Heart className="w-6 h-6 text-white" />
-          </div>
-          <span className="logo-text">BabyLove</span>
+          {/* 🔥 네모박스 제거하고 PNG 이미지만 표시 */}
+          <img 
+            src={logoImage} 
+            alt="로고" 
+            className="header-logo-only"
+            onError={(e) => {
+              // 이미지 로드 실패 시 하트 아이콘으로 대체
+              const target = e.target as HTMLImageElement;
+              target.style.display = 'none';
+              const fallback = document.createElement('div');
+              fallback.innerHTML = '❤️';
+              fallback.style.fontSize = '24px';
+              target.parentElement?.appendChild(fallback);
+            }}
+          />
+          <span className="logo-text">POMMONS</span>
         </div>
         
         <button className="nav-btn">
@@ -78,7 +92,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
           {({ isActive }) => (
             <div className={`tab-content ${isActive ? 'active' : ''}`}>
               <List size={20} />
-              <span>일기</span>
+              <span>로그</span>
             </div>
           )}
         </NavLink>
