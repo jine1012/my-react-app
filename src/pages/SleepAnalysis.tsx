@@ -597,7 +597,7 @@ export default function SleepAnalysis() {
                         {step}
                       </div>
                     </div>
-                  ))}햣
+                  ))}
                 </div>
               )}
             </div>

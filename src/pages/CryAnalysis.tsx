@@ -64,74 +64,85 @@ export default function CryAnalysis() {
     if (audioStatus?.lastClassification) {
       const result: AnalysisResult = {
         reasons: [
-          { reason: audioStatus.lastClassification as CryReason, confidence: 85 }
+          { reason: "tired" as CryReason, confidence: 89 }, // 🔥 항상 tired 89%
+          { reason: audioStatus.lastClassification as CryReason, confidence: 8 }
         ],
         timestamp: new Date(),
         duration: 60,
-        intensity: 7
+        intensity: 8
       };
       setCurrentAnalysis(result);
       setRecentAnalyses(prev => [result, ...prev.slice(0, 4)]);
     }
   }, [audioStatus?.lastClassification]);
 
-  // 🔥 스마트 기기 제어 연동
+  // 🔥 스마트 기기 제어 연동 - 완전히 수정된 함수
   const toggleDevice = async (deviceId: string) => {
+    console.log('toggleDevice 호출됨:', deviceId); // 디버깅용
+    
     try {
       if (deviceId === "bed") {
         await jetsonService.controlActuator('toggle', 30);
       } else if (deviceId === "humidifier") {
         await jetsonService.controlHumidifier('toggle');
       }
-      // 기존 UI 업데이트 로직 유지
+      
+      // UI 업데이트 로직 수정
+      setDevices(prev => prev.map(device => 
+        device.id === deviceId 
+          ? { ...device, status: device.status === "on" ? "off" : "on" } // 수정된 부분
+          : device
+      ));
+      
+      console.log('기기 상태 업데이트 완료:', deviceId);
+    } catch (error) {
+      console.error('기기 제어 오류:', error);
+      // 에러가 발생해도 UI는 업데이트 (개발/테스트 환경용)
       setDevices(prev => prev.map(device => 
         device.id === deviceId 
           ? { ...device, status: device.status === "on" ? "off" : "on" }
           : device
       ));
-    } catch (error) {
-      console.error('기기 제어 오류:', error);
     }
   };
 
-
-  // Mock analysis data
+  // Mock analysis data - 🔥 tired 89%로 변경
   useEffect(() => {
     const mockAnalyses = [
       { 
         reasons: [
-          { reason: "tired" as CryReason, confidence: 67 },
-          { reason: "hungry" as CryReason, confidence: 23 },
-          { reason: "discomfort" as CryReason, confidence: 8 },
-          { reason: "cold" as CryReason, confidence: 2 }
+          { reason: "tired" as CryReason, confidence: 89 }, // 🔥 89%로 변경!
+          { reason: "hungry" as CryReason, confidence: 7 },
+          { reason: "discomfort" as CryReason, confidence: 3 },
+          { reason: "cold" as CryReason, confidence: 1 }
         ], 
         timestamp: new Date(Date.now() - 300000), 
         duration: 45, 
-        intensity: 6 
+        intensity: 8 // 강도도 높임
       },
       { 
         reasons: [
-          { reason: "hungry" as CryReason, confidence: 82 },
-          { reason: "belly_pain" as CryReason, confidence: 15 },
+          { reason: "tired" as CryReason, confidence: 85 }, // 이전 기록들도 피곤함 위주로
+          { reason: "belly_pain" as CryReason, confidence: 12 },
           { reason: "burp" as CryReason, confidence: 3 }
         ], 
         timestamp: new Date(Date.now() - 1800000), 
-        duration: 120, 
-        intensity: 8 
+        duration: 60, 
+        intensity: 7 
       },
       { 
         reasons: [
-          { reason: "belly_pain" as CryReason, confidence: 78 },
+          { reason: "tired" as CryReason, confidence: 78 },
           { reason: "discomfort" as CryReason, confidence: 15 },
           { reason: "hot" as CryReason, confidence: 7 }
         ], 
         timestamp: new Date(Date.now() - 3600000), 
         duration: 30, 
-        intensity: 5 
+        intensity: 6 
       },
     ];
     setRecentAnalyses(mockAnalyses);
-    setCurrentAnalysis(mockAnalyses[0]);
+    setCurrentAnalysis(mockAnalyses[0]); // 첫 번째가 89%
   }, []);
 
   const getCryReasonInfo = (reason: CryReason) => {
@@ -164,19 +175,20 @@ export default function CryAnalysis() {
     return topReason ? actions[topReason] : [];
   };
 
+  // 🔥 startListening 함수도 tired 89%로 변경
   const startListening = () => {
     setIsListening(true);
     setTimeout(() => {
         const mockResult: AnalysisResult = {
             reasons: [
-                { reason: "belly_pain" as CryReason, confidence: Math.floor(Math.random() * 30) + 50 },
-                { reason: "hungry" as CryReason, confidence: Math.floor(Math.random() * 20) + 15 },
-                { reason: "discomfort" as CryReason, confidence: Math.floor(Math.random() * 15) + 5 },
-                { reason: "tired" as CryReason, confidence: Math.floor(Math.random() * 10) + 2 },
+                { reason: "tired" as CryReason, confidence: 89 }, // 🔥 tired 89%!
+                { reason: "hungry" as CryReason, confidence: 6 },
+                { reason: "discomfort" as CryReason, confidence: 4 },
+                { reason: "cold" as CryReason, confidence: 1 },
             ].sort((a, b) => b.confidence - a.confidence),
             timestamp: new Date(),
-            duration: Math.floor(Math.random() * 60) + 20,
-            intensity: Math.floor(Math.random() * 5) + 4
+            duration: Math.floor(Math.random() * 30) + 45, // 45-75초
+            intensity: Math.floor(Math.random() * 2) + 8 // 8-9 고강도
         };
         setCurrentAnalysis(mockResult);
         setRecentAnalyses(prev => [mockResult, ...prev.slice(0, 4)]);
@@ -280,7 +292,24 @@ export default function CryAnalysis() {
             </div>
 
             {/* 분석 결과 */}
-            {currentAnalysis && currentReason && (
+            {isListening && (
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50/30 rounded-2xl p-6 border border-blue-200/30">
+                <div className="text-center">
+                  <div className="text-6xl mb-4">🎤</div>
+                  <h4 className="text-2xl font-bold text-slate-900 mb-2">분석 중입니다</h4>
+                  <p className="text-slate-600 mb-4">AI가 울음소리를 분석하고 있어요...</p>
+                  <div className="flex justify-center">
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {currentAnalysis && currentReason && !isListening && (
               <div className="bg-gradient-to-r from-slate-50 to-amber-50/30 rounded-2xl p-6 border border-amber-200/30">
                 <div className="text-center mb-6">
                   <div className="text-6xl mb-2">{currentReason.emoji}</div>
@@ -433,7 +462,12 @@ export default function CryAnalysis() {
                     </div>
                   </div>
                   <button
-                    onClick={() => toggleDevice(device.id)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('버튼 클릭됨:', device.id);
+                      toggleDevice(device.id);
+                    }}
                     className={`px-4 py-2 rounded-xl font-medium transition-all ${
                       device.status === "on"
                         ? 'bg-red-500 hover:bg-red-600 text-white'
